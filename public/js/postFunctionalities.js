@@ -42,6 +42,50 @@ function likePost(e) {
     }
 }
 
+function repostPost(e) {
+    const target = $(e.target).closest('.ui.repost.button');
+    const postID = target.closest(".ui.fluid.card").attr("postID");
+    const postClass = target.closest(".ui.fluid.card").attr("postClass");
+    const currDate = Date.now();
+
+    if (target.hasClass("green")) { //Undo Repost
+        target.removeClass("green");
+
+        if (target.closest(".ui.fluid.card").attr("type") == 'userPost') {
+            $.post("/userPost_feed", {
+                postID: postID,
+                undo_repost: currDate,
+                _csrf: $('meta[name="csrf-token"]').attr('content')
+            });
+        } else {
+            $.post("/feed", {
+                postID: postID,
+                undo_repost: currDate,
+                postClass: postClass,
+                _csrf: $('meta[name="csrf-token"]').attr('content')
+            });
+        }
+    } else { //Repost
+        target.addClass("green");
+
+        if (target.closest(".ui.fluid.card").attr("type") == 'userPost') {
+            $.post("/userPost_feed", {
+                postID: postID,
+                repost: currDate,
+                _csrf: $('meta[name="csrf-token"]').attr('content')
+            });
+        } else {
+            $.post("/feed", {
+                postID: postID,
+                repost: currDate,
+                postClass: postClass,
+                _csrf: $('meta[name="csrf-token"]').attr('content')
+            });
+        }
+    }
+}
+
+
 function flagPost(e) {
     const target = $(e.target);
     const post = target.closest(".ui.fluid.card.dim");
@@ -263,6 +307,8 @@ $(window).on('load', () => {
 
     //Like/Unlike Post
     $('.like.button').on('click', likePost);
+
+    $('.repost.button').on('click', repostPost);
 
     //Flag Post
     $('.flag.button').on('click', flagPost);
