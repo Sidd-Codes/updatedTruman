@@ -4,8 +4,8 @@
     .content
       .center
         h2.ui.inverted.icon.header
-          i.red.flag.icon
-          |  You've flagged this!
+          i.red.exclamation.triangle.icon
+          |  You've marked this as harmful!
           h3.ui.inverted.header
             span="The admins will review this post further. We are sorry you had this experience."
   .content
@@ -18,13 +18,16 @@
   .content
     .description=val.body
     .myTimer.hidden 0
-  .ui.bottom.three.attached.icon.buttons
+  .ui.bottom.four.attached.icon.buttons
     .ui.reply.button(tabindex='0')
       i.reply.icon
       |  Reply
     .ui.flag.button.harmful(tabindex='0')
       i.red.exclamation.triangle.icon
       |  Harmful
+    .ui.repost.button(tabindex='0', onClick='repostPost(event)')
+      i.retweet.icon
+      |  Repost
     .ui.labeled.button(tabindex='0')
       .ui.like.button(class=val.like? "red": null)
         i.heart.icon
@@ -69,7 +72,7 @@
                 .text=comment.body
                 .actions
                   a.like.comment(class=comment.liked ? "red" : null ) !{comment.liked ? "Unlike" : "Like"}
-                  a.flag.comment Flag
+                  a.flag.comment Mark as Harmful
   .extra.content
     .ui.fluid.left.labeled.right.icon.input
       .ui.label
@@ -81,3 +84,29 @@
         .field 
           textarea.newcomment(type='text', placeholder='Write a Comment' rows='1')
       i.big.send.link.icon
+
+script.
+  function repostPost(event) {
+    event.preventDefault();
+    const postId = event.currentTarget.closest('.card').getAttribute('postID');
+    fetch('/repost', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({ postID: postId })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('Post reposted successfully!');
+      } else {
+        alert('Failed to repost. Please try again.');
+      }
+    })
+    .catch(error => {
+      console.error('Error reposting:', error);
+      alert('An error occurred. Please try again.');
+    });
+  }
