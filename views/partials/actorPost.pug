@@ -7,7 +7,7 @@
           i.red.exclamation.triangle.icon
           |  You've marked this as harmful!
           h3.ui.inverted.header
-            span="The admins will review this post further. We are sorry you had this experience."
+            span The admins will review this post further. We are sorry you had this experience.
   .content
     .right.floated.time.meta= (user.createdAt.getTime() + val.time)
     a(href='/user/'+val.actor.username)     
@@ -87,33 +87,33 @@
 
 script.
   function repostPost(event) {
-  event.preventDefault();
-  const postId = event.currentTarget.closest('.ui.fluid.card').getAttribute('postID');
-  console.log('Reposting post with ID:', postId);
+    event.preventDefault();
+    const postId = event.currentTarget.closest('.ui.fluid.card').getAttribute('postID');
+    console.log('Reposting post with ID:', postId);
 
-  fetch('/repost', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-    },
-    body: JSON.stringify({ postID: postId })
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    return response.json();
-  })
-  .then(data => {
-    if (data.success) {
-      alert('Post reposted successfully!');
-    } else {
-      alert('Failed to repost. Please try again.');
-    }
-  })
-  .catch(error => {
-    console.error('Error reposting:', error);
-    alert('An error occurred. Please try again.');
-  });
-
+    fetch('/repost', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({ postID: postId })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        alert('Post reposted successfully!');
+      } else {
+        alert('Failed to repost. Please try again.');
+      }
+    })
+    .catch(error => {
+      console.error('Error reposting:', error);
+      alert('An error occurred. Please try again.');
+    });
+  }
