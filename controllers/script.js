@@ -126,6 +126,38 @@ exports.newPost = async(req, res) => {
     }
 };
 
+exports.repostPost = async (req, res) => {
+  try {
+    const { postID } = req.body;
+    const user = await User.findById(req.user.id).exec();
+
+    // Find the post by ID
+    let post = user.posts.id(postID);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    // Clone the post with a new ID and push it to the user's posts array
+    let newPost = {
+      ...post.toObject(),
+      _id: mongoose.Types.ObjectId(),
+      comments: [], // Assuming we don't want to carry over comments
+      likes: 0,
+      liked: false,
+    };
+
+    user.posts.unshift(newPost); // Add the cloned post to the user's posts
+    await user.save();
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error reposting:', err);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+
 /**
  * POST /feed/
  * Record user's actions on ACTOR posts. 
