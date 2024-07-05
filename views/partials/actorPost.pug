@@ -22,9 +22,9 @@
     .ui.reply.button(tabindex='0')
       i.reply.icon
       |  Reply
-    .ui.flag.button(tabindex='0')
-      i.flag.icon
-      |  Flag
+    .ui.flag.button.harmful(tabindex='0')
+      i.red.exclamation.triangle.icon
+      |  Harmful
     .ui.labeled.button(tabindex='0')
       .ui.like.button(class=val.like? "red": null)
         i.heart.icon
