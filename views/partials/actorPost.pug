@@ -87,26 +87,34 @@
 
 script.
   function repostPost(event) {
-    event.preventDefault();
-    const postId = event.currentTarget.closest('.card').getAttribute('postID');
-    fetch('/repost', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-      },
-      body: JSON.stringify({ postID: postId })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert('Post reposted successfully!');
-      } else {
-        alert('Failed to repost. Please try again.');
-      }
-    })
-    .catch(error => {
-      console.error('Error reposting:', error);
-      alert('An error occurred. Please try again.');
-    });
-  }
+  event.preventDefault();
+  const postId = event.currentTarget.closest('.ui.fluid.card').getAttribute('postID');
+  console.log('Reposting post with ID:', postId);
+
+  fetch('/repost', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify({ postID: postId })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    if (data.success) {
+      alert('Post reposted successfully!');
+    } else {
+      alert('Failed to repost. Please try again.');
+    }
+  })
+  .catch(error => {
+    console.error('Error reposting:', error);
+    alert('An error occurred. Please try again.');
+  });
+}
+
