@@ -48,40 +48,28 @@ function repostPost(e) {
     const postClass = target.closest(".ui.fluid.card").attr("postClass");
     const currDate = Date.now();
 
-    if (target.hasClass("green")) { //Undo Repost
-        target.removeClass("green");
-
-        if (target.closest(".ui.fluid.card").attr("type") == 'userPost') {
-            $.post("/userPost_feed", {
-                postID: postID,
-                undo_repost: currDate,
-                _csrf: $('meta[name="csrf-token"]').attr('content')
-            });
-        } else {
-            $.post("/feed", {
-                postID: postID,
-                undo_repost: currDate,
-                postClass: postClass,
-                _csrf: $('meta[name="csrf-token"]').attr('content')
-            });
-        }
-    } else { //Repost
+    if (!target.hasClass("green")) { // Only repost if not already reposted
         target.addClass("green");
 
-        if (target.closest(".ui.fluid.card").attr("type") == 'userPost') {
-            $.post("/userPost_feed", {
-                postID: postID,
-                repost: currDate,
-                _csrf: $('meta[name="csrf-token"]').attr('content')
-            });
-        } else {
-            $.post("/feed", {
-                postID: postID,
-                repost: currDate,
-                postClass: postClass,
-                _csrf: $('meta[name="csrf-token"]').attr('content')
-            });
-        }
+        $.post("/repost", {
+            postID: postID,
+            postClass: postClass,
+            repost: currDate,
+            _csrf: $('meta[name="csrf-token"]').attr('content')
+        }).done(function(data) {
+            if (data.success) {
+                alert('Post reposted successfully!');
+            } else {
+                alert('Failed to repost: ' + data.message);
+                target.removeClass("green");
+            }
+        }).fail(function(xhr, status, error) {
+            console.error('Error reposting:', error);
+            alert('An error occurred while reposting. Please try again.');
+            target.removeClass("green");
+        });
+    } else {
+        alert('You have already reposted this post.');
     }
 }
 
