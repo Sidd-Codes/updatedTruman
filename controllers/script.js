@@ -128,29 +128,46 @@ exports.newPost = async(req, res) => {
 
 exports.repostPost = async (req, res) => {
   try {
-    const { postID } = req.body;
+    const { postID, postClass } = req.body;
     const user = await User.findById(req.user.id).exec();
 
-    // Find the post by ID
-    let post = user.posts.id(postID);
+    // Find the original post
+    let originalPost;
+    if (postClass === 'userPost') {
+      originalPost = user.posts.id(postID);
+    } else {
+      originalPost = await Script.findById(postID).populate('actor').exec();
+    }
 
-    if (!post) {
+    if (!originalPost) {
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
 
-    // Clone the post with a new ID and push it to the user's posts array
+    // Create a new post object based on the original post
+    const currDate = Date.now();
     let newPost = {
-      ...post.toObject(),
-      _id: mongoose.Types.ObjectId(),
-      comments: [], // Assuming we don't want to carry over comments
-      likes: 0,
+      type: "repost",
+      originalPostID: originalPost._id,
+      postID: user.numPosts + 1,
+      body: originalPost.body,
+      picture: originalPost.picture,
       liked: false,
+      likes: 0,
+      comments: [],
+      absTime: currDate,
+      relativeTime: currDate - user.createdAt,
+      actor: originalPost.actor ? originalPost.actor : null, // Include original actor if it exists
     };
 
-    user.posts.unshift(newPost); // Add the cloned post to the user's posts
+    // Increment the user's post count
+    user.numPosts += 1;
+
+    // Add the new post to the user's posts
+    user.posts.unshift(newPost);
+
     await user.save();
 
-    res.json({ success: true });
+    res.json({ success: true, message: 'Post reposted successfully' });
   } catch (err) {
     console.error('Error reposting:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
