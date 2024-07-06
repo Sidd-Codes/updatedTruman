@@ -23,6 +23,54 @@ function resetActiveTimer(loggingOut) {
     }
 }
 
+function repostPost(event) {
+    event.preventDefault();
+    const target = $(event.target).closest('.ui.repost.button');
+    const postID = target.closest(".ui.fluid.card").attr("postID");
+    const postClass = target.closest(".ui.fluid.card").attr("postClass");
+    const currDate = Date.now();
+
+    if (!target.hasClass("green")) { // Only repost if not already reposted
+        target.addClass("green");
+
+        $.post("/repost", {
+            postID: postID,
+            postClass: postClass,
+            repost: currDate,
+            _csrf: $('meta[name="csrf-token"]').attr('content')
+        }).done(function(data) {
+            if (data.success) {
+                alert('Post reposted successfully!');
+                addRepostedPostToFeed(data.post); // Assuming the server sends back the reposted post data
+            } else {
+                alert('Failed to repost: ' + data.message);
+                target.removeClass("green");
+            }
+        }).fail(function(xhr, status, error) {
+            console.error('Error reposting:', error);
+            alert('An error occurred while reposting. Please try again.');
+            target.removeClass("green");
+        });
+    } else {
+        alert('You have already reposted this post.');
+    }
+}
+
+function addRepostedPostToFeed(postData) {
+    // Create HTML for the reposted post
+    const repostedPostHtml = `
+        <div class="ui fluid card" postID="${postData.postID}" postClass="repost">
+            <div class="content">
+                <div class="description">${postData.body}</div>
+            </div>
+            <!-- Add other post elements (like, comment buttons etc.) -->
+        </div>
+    `;
+
+    // Add the reposted post to the top of the feed
+    $('#feed-container').prepend(repostedPostHtml);
+}
+
 $(window).on("load", function() {
     /**
      * Recording user's active time on website:
@@ -104,6 +152,9 @@ $(window).on("load", function() {
     $(`#content .fluid.card .img img, #content img.ui.avatar.image, #content a.avatar img`).visibility({
         type: 'image'
     });
+
+    // Add event listener for repost button
+    $('.ui.repost.button').on('click', repostPost);
 });
 
 $(window).on("beforeunload", function() {
