@@ -41,14 +41,16 @@ function repostPost(event) {
         }).done(function(data) {
             if (data.success) {
                 alert('Post reposted successfully!');
-                addRepostedPostToFeed(data.post); // Assuming the server sends back the reposted post data
+                addRepostedPostToFeed(data.post);
             } else {
                 alert('Failed to repost: ' + data.message);
                 target.removeClass("green");
             }
         }).fail(function(xhr, status, error) {
             console.error('Error reposting:', error);
-            alert('An error occurred while reposting. Please try again.');
+            console.error('Status:', status);
+            console.error('Response:', xhr.responseText);
+            alert('An error occurred while reposting. Please try again. Error: ' + error);
             target.removeClass("green");
         });
     } else {
