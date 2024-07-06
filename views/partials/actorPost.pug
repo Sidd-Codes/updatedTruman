@@ -113,7 +113,8 @@ script.
       }
     })
     .catch(error => {
-      console.error('Error reposting:', error);
-      alert('An error occurred. Please try again.');
-    });
+    console.error('Error reposting:', error);
+    console.error('Error details:', error.message);
+    alert('An error occurred. Please try again. Error: ' + error.message);
+  });
   }
