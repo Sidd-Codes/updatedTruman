@@ -127,6 +127,7 @@ exports.newPost = async(req, res) => {
 };
 
 exports.repostPost = async (req, res) => {
+  console.log('Repost request received:', req.body);
   try {
     const { postID, postClass } = req.body;
     const user = await User.findById(req.user.id).exec();
@@ -169,7 +170,7 @@ exports.repostPost = async (req, res) => {
 
     res.json({ success: true, message: 'Post reposted successfully', post: newPost });
   } catch (err) {
-    console.error('Error reposting:', err);
+    console.error('Error in repostPost:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
