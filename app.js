@@ -132,7 +132,7 @@ app.use(flash());
 app.use((req, res, next) => {
     // Multer multipart/form-data handling needs to occur before the Lusca CSRF check.
     // This allows us to not check CSRF when uploading an image file. It's a weird issue that multer and lusca do not play well together.
-    if ((req.path === '/post/new') || (req.path === '/account/profile') || (req.path === '/account/signup_info_post')) {
+    if ((req.path === '/post/new') || (req.path === '/account/profile') || (req.path === '/account/signup_info_post') || (req.path === '/repost')) {
         console.log("Not checking CSRF. Out path now");
         next();
     } else {
@@ -223,7 +223,7 @@ app.post('/account/consent', passportConfig.isAuthenticated, userController.post
 app.get('/me', passportConfig.isAuthenticated, userController.getMe);
 app.get('/user/:userId', passportConfig.isAuthenticated, actorsController.getActor);
 app.post('/user', passportConfig.isAuthenticated, actorsController.postBlockReportOrFollow);
-app.get('/actors', passportConfig.isAuthenticated, actorsController.getActors)
+app.get('/actors', passportConfig.isAuthenticated, actorsController.getActors);
 
 app.get('/feed', passportConfig.isAuthenticated, scriptController.getScript);
 app.post('/feed', passportConfig.isAuthenticated, scriptController.postUpdateFeedAction);
