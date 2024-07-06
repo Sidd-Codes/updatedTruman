@@ -156,7 +156,7 @@ exports.repostPost = async (req, res) => {
       comments: [],
       absTime: currDate,
       relativeTime: currDate - user.createdAt,
-      actor: originalPost.actor ? originalPost.actor : null, // Include original actor if it exists
+      actor: originalPost.actor ? originalPost.actor : null,
     };
 
     // Increment the user's post count
@@ -167,7 +167,7 @@ exports.repostPost = async (req, res) => {
 
     await user.save();
 
-    res.json({ success: true, message: 'Post reposted successfully' });
+    res.json({ success: true, message: 'Post reposted successfully', post: newPost });
   } catch (err) {
     console.error('Error reposting:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
