@@ -1,4 +1,4 @@
-//Before Page load:
+// Before Page load:
 $('#content').hide();
 $('#loading').show();
 let isActive = false;
@@ -17,7 +17,7 @@ function resetActiveTimer(loggingOut) {
                     window.loggingOut = true;
                     window.location.href = '/logout';
                 }
-            })
+            });
         }
         isActive = false;
     }
@@ -82,7 +82,7 @@ $(window).on("load", function() {
     // Definition of an active user: mouse movement, clicks etc.
     // idleTime is reset to 0 whenever mouse movement occurs.
     $('#pagegrid').on('mousemove keypress scroll mousewheel', function() {
-        //If there hasn't been a "start time" for activity, set it. We use session storage so we can track activity when pages changes too.
+        // If there hasn't been a "start time" for activity, set it. We use session storage so we can track activity when pages changes too.
         if (!isActive) {
             activeStartTime = Date.now();
             isActive = true;
@@ -90,7 +90,7 @@ $(window).on("load", function() {
         idleTime = 0;
     });
 
-    // Every 15 seconds, increase idleTime by 1. If idleTime is greater than 4 (i.e. there has been inactivity for about 60-74 seconds, log the duration of activity and reset the active timer)
+    // Every 15 seconds, increase idleTime by 1. If idleTime is greater than 4 (i.e. there has been inactivity for about 60-74 seconds), log the duration of activity and reset the active timer.
     setInterval(function() {
         idleTime += 1;
         if (idleTime > 4) { // 60.001-74.999 seconds (idle time)
@@ -98,7 +98,7 @@ $(window).on("load", function() {
         }
     }, 15000);
 
-    // When a user logs out of the website, log the duration of activity and reset the active timer).
+    // When a user logs out of the website, log the duration of activity and reset the active timer.
     $('a.item.logoutLink').on('click', function() {
         resetActiveTimer(true);
     });
@@ -114,6 +114,7 @@ $(window).on("load", function() {
     $('.message .close').on('click', function() {
         $(this).closest('.message').transition('fade');
     });
+
     // Fomantic UI: Enable checkboxes
     $('.checkbox').checkbox();
 
@@ -125,7 +126,7 @@ $(window).on("load", function() {
         });
         if (window.location.pathname !== '/notifications') {
             setInterval(function() {
-                // method to be executed;
+                // Method to be executed;
                 $.getJSON("/notifications", { bell: true }, function(json) {
                     if (json.count != 0) {
                         $("i.big.alarm.icon").replaceWith('<i class="big icons"><i class="red alarm icon"></i><i class="corner yellow lightning icon"></i></i>');
@@ -160,7 +161,7 @@ $(window).on("load", function() {
 });
 
 $(window).on("beforeunload", function() {
-    // https: //developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
     if (!window.loggingOut) {
         resetActiveTimer(false);
     }
