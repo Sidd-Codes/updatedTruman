@@ -1,4 +1,4 @@
-.ui.fluid.card.dim(postClass=val.class, postID=val.id, type='actor', actor_un = val.actor.username, actor_name = val.actor.profile.name, actor_pic = val.actor.profile.picture)
+.ui.fluid.card.dim(postClass=val.class, postID=val.id, type='actor', actor_un=val.actor.username, actor_name=val.actor.profile.name, actor_pic=val.actor.profile.picture)
   //- dimmer DIV for flagging
   .ui.dimmer.flag
     .content
@@ -10,7 +10,7 @@
             span The admins will review this post further. We are sorry you had this experience.
   .content
     .right.floated.time.meta= (user.createdAt.getTime() + val.time)
-    a(href='/user/'+val.actor.username)     
+    a(href='/user/'+val.actor.username)
       img.ui.avatar.image(src='/public/picture.svg', data-src=cdn+"/profile_pictures/"+val.actor.profile.picture)
       span=val.actor.profile.name
   .img.post.image
@@ -25,7 +25,7 @@
     .ui.flag.button.harmful(tabindex='0')
       i.exclamation.triangle.icon
       |  Harmful
-    .ui.repost.button(tabindex='0', onClick='repostPost(event)')
+    .ui.repost.button(tabindex='0')
       i.retweet.icon
       |  Repost
     .ui.labeled.button(tabindex='0')
@@ -55,11 +55,11 @@
                     |  Likes
                 .text=comment.body
                 .actions
-                  a.like.comment(class=comment.liked ? "red" : null ) !{comment.liked ? "Unlike" : "Like"}
+                  a.like.comment(class=comment.liked ? "red" : null) !{comment.liked ? "Unlike" : "Like"}
           //- Else this is a normal comment from the script
           else
             .comment(commentID=comment.id)
-              a.avatar(href='/user/'+comment.actor.username)                     
+              a.avatar(href='/user/'+comment.actor.username)
                 img(src='/public/picture.svg', data-src=cdn+"/profile_pictures/"+comment.actor.profile.picture)
               .content
                 a.author(href='/user/'+comment.actor.username)=comment.actor.profile.name
@@ -71,7 +71,7 @@
                     |  Likes
                 .text=comment.body
                 .actions
-                  a.like.comment(class=comment.liked ? "red" : null ) !{comment.liked ? "Unlike" : "Like"}
+                  a.like.comment(class=comment.liked ? "red" : null) !{comment.liked ? "Unlike" : "Like"}
                   a.flag.comment Mark as Harmful
   .extra.content
     .ui.fluid.left.labeled.right.icon.input
@@ -79,10 +79,8 @@
         if user.profile.picture
           img.ui.avatar.image.small(src='/user_avatar/'+user.profile.picture, name=user.profile.name || user.username || user.id)
         else
-          img.ui.avatar.image.small(src=user.gravatar(60), name=user.profile.name || user.username || user.id)            
+          img.ui.avatar.image.small(src=user.gravatar(60), name=user.profile.name || user.username || user.id)
       .ui.form
-        .field 
+        .field
           textarea.newcomment(type='text', placeholder='Write a Comment' rows='1')
       i.big.send.link.icon
-
-
