@@ -128,6 +128,8 @@ exports.newPost = async(req, res) => {
 
 exports.repostPost = async (req, res) => {
   console.log('Repost request received:', req.body);
+  console.log('User:', req.user);
+  console.log('Body:', req.body);
   try {
     const { postID, postClass } = req.body;
     const user = await User.findById(req.user.id).exec();
