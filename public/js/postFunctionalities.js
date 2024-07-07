@@ -44,13 +44,18 @@ function likePost(e) {
 
 function repostPost(e) {
     const target = $(e.target).closest('.ui.repost.button');
-    const postID = target.closest(".ui.fluid.card").attr("postID");
-    const postClass = target.closest(".ui.fluid.card").attr("postClass");
+    const card = target.closest(".ui.fluid.card");
+    const postID = card.attr("postID");
+    const postClass = card.attr("postClass");
     const currDate = Date.now();
 
-    if (!target.hasClass("green")) { // Only repost if not already reposted
-        target.addClass("green");
+    // Check if it's a user's own post
+    if (card.attr("type") === 'userPost') {
+        alert('You cannot repost your own posts.');
+        return;
+    }
 
+    if (!target.hasClass("green")) { // Only repost if not already reposted
         $.post("/repost", {
             postID: postID,
             postClass: postClass,
@@ -58,15 +63,14 @@ function repostPost(e) {
             _csrf: $('meta[name="csrf-token"]').attr('content')
         }).done(function(data) {
             if (data.success) {
+                target.addClass("green");
                 alert('Post reposted successfully!');
             } else {
                 alert('Failed to repost: ' + data.message);
-                target.removeClass("green");
             }
         }).fail(function(xhr, status, error) {
             console.error('Error reposting:', error);
             alert('An error occurred while reposting. Please try again.');
-            target.removeClass("green");
         });
     } else {
         alert('You have already reposted this post.');
