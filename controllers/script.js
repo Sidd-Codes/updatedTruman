@@ -90,7 +90,14 @@ exports.newPost = async(req, res, next) => {
                 relativeTime: currDate - user.createdAt,
             };
 
-            // ... (rest of the function remains the same)
+            // If it's a repost, add the original post details
+            if (req.body.repost) {
+                post.repostDetails = {
+                    originalPostID: req.body.repostID,
+                    originalPostBody: req.body.repostBody,
+                    originalPostPicture: req.body.repostPicture
+                };
+            }
 
             user.posts.unshift(post); // Add most recent user-made post to the beginning of the array
             await user.save();
@@ -124,6 +131,9 @@ exports.repostPost = async (req, res, next) => {
 
     // Prepare the repost data
     req.body.body = `Repost from ${originalPost.actor.profile.name}: ${originalPost.body}`;
+    req.body.repostID = postID;
+    req.body.repostBody = originalPost.body;
+    req.body.repostPicture = originalPost.picture;
     req.file = {
       filename: originalPost.picture
     };
@@ -136,7 +146,6 @@ exports.repostPost = async (req, res, next) => {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
-
 
 /**
  * POST /feed/
