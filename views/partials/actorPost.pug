@@ -85,38 +85,4 @@
           textarea.newcomment(type='text', placeholder='Write a Comment' rows='1')
       i.big.send.link.icon
 
-script.
-  function repostPost(event) {
-    event.preventDefault();
-    const postElement = event.currentTarget.closest('.ui.fluid.card');
-    const postId = postElement.getAttribute('postID');
-    const postClass = postElement.getAttribute('postClass');
-    console.log('Reposting post with ID:', postId, 'and class:', postClass);
 
-    fetch('/repost', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-      },
-      body: JSON.stringify({ postID: postId, postClass: postClass })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (data.success) {
-        alert('Post reposted successfully!');
-      } else {
-        alert('Failed to repost. Please try again.');
-      }
-    })
-    .catch(error => {
-      console.error('Error reposting:', error);
-      console.error('Error details:', error.message);
-      alert('An error occurred. Please try again. Error: ' + error.message);
-    });
-  }
