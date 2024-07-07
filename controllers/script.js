@@ -71,7 +71,7 @@ exports.getScript = async(req, res, next) => {
  * Post /post/new
  * Record a new user-made post. Include any actor replies (comments) that go along with it.
  */
-exports.newPost = async(req, res) => {
+exports.newPost = async(req, res, next) => {
     try {
         const user = await User.findById(req.user.id).exec();
         if (req.file) {
@@ -79,7 +79,7 @@ exports.newPost = async(req, res) => {
             const currDate = Date.now();
 
             let post = {
-                type: "user_post",
+                type: req.body.repost ? "repost" : "user_post",
                 postID: user.numPosts,
                 body: req.body.body,
                 picture: req.file.filename,
@@ -90,33 +90,16 @@ exports.newPost = async(req, res) => {
                 relativeTime: currDate - user.createdAt,
             };
 
-            // Find any Actor replies (comments) that go along with this post
-            const actor_replies = await Notification.find()
-                .where('userPostID').equals(post.postID)
-                .where('notificationType').equals('reply')
-                .populate('actor').exec();
+            // ... (rest of the function remains the same)
 
-            // If there are Actor replies (comments) that go along with this post, add them to the user's post.
-            if (actor_replies.length > 0) {
-                for (const reply of actor_replies) {
-                    user.numActorReplies = user.numActorReplies + 1; // Count begins at 0
-                    const tmp_actor_reply = {
-                        actor: reply.actor._id,
-                        body: reply.replyBody,
-                        commentID: user.numActorReplies,
-                        relativeTime: post.relativeTime + reply.time,
-                        absTime: new Date(user.createdAt.getTime() + post.relativeTime + reply.time),
-                        new_comment: false,
-                        liked: false,
-                        flagged: false,
-                        likes: 0
-                    };
-                    post.comments.push(tmp_actor_reply);
-                }
-            }
             user.posts.unshift(post); // Add most recent user-made post to the beginning of the array
             await user.save();
-            res.redirect('/');
+            
+            if (req.body.repost) {
+                res.json({ success: true, message: 'Post reposted successfully', post: post });
+            } else {
+                res.redirect('/');
+            }
         } else {
             req.flash('errors', { msg: 'ERROR: Your post did not get sent. Please include a photo and a caption.' });
             res.redirect('/');
@@ -126,51 +109,28 @@ exports.newPost = async(req, res) => {
     }
 };
 
-exports.repostPost = async (req, res) => {
+exports.repostPost = async (req, res, next) => {
   console.log('Repost request received:', req.body);
-  console.log('User:', req.user);
-  console.log('Body:', req.body);
   try {
-    const { postID, postClass } = req.body;
+    const { postID } = req.body;
     const user = await User.findById(req.user.id).exec();
 
     // Find the original post
-    let originalPost;
-    if (postClass === 'userPost') {
-      originalPost = user.posts.id(postID);
-    } else {
-      originalPost = await Script.findById(postID).populate('actor').exec();
-    }
+    const originalPost = await Script.findById(postID).populate('actor').exec();
 
     if (!originalPost) {
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
 
-    // Create a new post object based on the original post
-    const currDate = Date.now();
-    let newPost = {
-      type: "repost",
-      originalPostID: originalPost._id,
-      postID: user.numPosts + 1,
-      body: originalPost.body,
-      picture: originalPost.picture,
-      liked: false,
-      likes: 0,
-      comments: [],
-      absTime: currDate,
-      relativeTime: currDate - user.createdAt,
-      actor: originalPost.actor ? originalPost.actor : null,
+    // Prepare the repost data
+    req.body.body = `Repost from ${originalPost.actor.profile.name}: ${originalPost.body}`;
+    req.file = {
+      filename: originalPost.picture
     };
 
-    // Increment the user's post count
-    user.numPosts += 1;
+    // Call the newPost function
+    await exports.newPost(req, res, next);
 
-    // Add the new post to the user's posts
-    user.posts.unshift(newPost);
-
-    await user.save();
-
-    res.json({ success: true, message: 'Post reposted successfully', post: newPost });
   } catch (err) {
     console.error('Error in repostPost:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
