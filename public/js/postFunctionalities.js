@@ -5,7 +5,7 @@ function likePost(e) {
     const postClass = target.closest(".ui.fluid.card").attr("postClass");
     const currDate = Date.now();
 
-    if (target.hasClass("red")) { //Unlike Post
+    if (target.hasClass("red")) { // Unlike Post
         target.removeClass("red");
         label.html(function(i, val) { return val * 1 - 1 });
 
@@ -22,7 +22,7 @@ function likePost(e) {
                 postClass: postClass,
                 _csrf: $('meta[name="csrf-token"]').attr('content')
             });
-    } else { //Like Post
+    } else { // Like Post
         target.addClass("red");
         label.html(function(i, val) { return val * 1 + 1 });
 
@@ -42,6 +42,27 @@ function likePost(e) {
     }
 }
 
+function repostPost(e) {
+    const target = $(e.target).closest('.ui.repost.button');
+    const card = target.closest(".ui.fluid.card");
+    const postID = card.attr("postID");
+    const postClass = card.attr("postClass");
+    const postDescription = card.find(".description").text();
+    const postImageSrc = card.find(".img img").attr("src");
+
+    // Populate the modal with the post's content
+    $('#repost-modal textarea[name="body"]').val(postDescription);
+    if (postImageSrc) {
+        $('#repost-modal img#imgInp').attr('src', postImageSrc).show();
+    } else {
+        $('#repost-modal img#imgInp').hide();
+    }
+    $('#repost-modal').modal('show');
+
+    // Store the postID and postClass in the modal for later use
+    $('#repost-modal').data('postID', postID).data('postClass', postClass);
+}
+
 function flagPost(e) {
     const target = $(e.target);
     const post = target.closest(".ui.fluid.card.dim");
@@ -56,7 +77,7 @@ function flagPost(e) {
         _csrf: $('meta[name="csrf-token"]').attr('content')
     });
     post.find(".ui.dimmer.flag").dimmer({ closable: false }).dimmer('show');
-    //repeat to ensure its closable
+    // Repeat to ensure it's closable
     post.find(".ui.dimmer.flag").dimmer({ closable: false }).dimmer('show');
 }
 
@@ -67,7 +88,7 @@ function likeComment(e) {
     const commentID = comment.attr("commentID");
     const currDate = Date.now();
 
-    if (target.hasClass("red")) { //Unlike comment
+    if (target.hasClass("red")) { // Unlike comment
         target.removeClass("red");
         label.html(function(i, val) { return val * 1 - 1 });
         $.post("/feed", {
@@ -75,7 +96,7 @@ function likeComment(e) {
             unlike: currDate,
             _csrf: $('meta[name="csrf-token"]').attr('content')
         });
-    } else { //Like comment
+    } else { // Like comment
         target.addClass("red");
         label.html(function(i, val) { return val * 1 + 1 });
         $.post("/feed", {
@@ -95,7 +116,7 @@ function postComment(e) {
     const body = commentArea.val();
     const time = Date.now();
 
-    // prevent from posting empty comments
+    // Prevent from posting empty comments
     if (!body) {
         return;
     }
@@ -117,7 +138,7 @@ function postComment(e) {
         });
 
     commentArea.val("");
-    // dynamically append this comment to the comment section to display immediately
+    // Dynamically append this comment to the comment section to display immediately
     const newComment = `
     <div class="comment">
       <a class="avatar image" href="/me">
@@ -148,27 +169,6 @@ function onEnterSubmit(e) {
     }
 }
 
-function repostPost(e) {
-    const target = $(e.target).closest('.ui.repost.button');
-    const card = target.closest(".ui.fluid.card");
-    const postID = card.attr("postID");
-    const postClass = card.attr("postClass");
-    const postDescription = card.find(".description").text();
-    const postImageSrc = card.find(".img img").attr("src");
-
-    // Populate the modal with the post's content
-    $('#repost-modal textarea[name="body"]').val(postDescription);
-    if (postImageSrc) {
-        $('#repost-modal img#imgInp').attr('src', postImageSrc).show();
-    } else {
-        $('#repost-modal img#imgInp').hide();
-    }
-    $('#repost-modal').modal('show');
-
-    // Store the postID and postClass in the modal for later use
-    $('#repost-modal').data('postID', postID).data('postClass', postClass);
-}
-
 $(document).ready(function() {
     $(document).on("click", ".like.button", function(e) { likePost(e); });
     $(document).on("click", ".flag.button", function(e) { flagPost(e); });
@@ -177,4 +177,46 @@ $(document).ready(function() {
     $(document).on("click", ".actions .reply", function(e) { postComment(e); });
     $(document).on("click", ".repost.button", function(e) { repostPost(e); });
     $(document).on("keydown", ".ui.fluid.card .ui.fluid.left.labeled.right.icon.input textarea.newcomment", function(e) { onEnterSubmit(e); });
+
+    // Handle the repost modal form submission
+    $('#repost-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        const postID = $('#repost-modal').data('postID');
+        const postClass = $('#repost-modal').data('postClass');
+        const description = $(this).find('textarea[name="body"]').val();
+        const imageFile = $(this).find('input[name="picinput"]')[0].files[0];
+        const currDate = Date.now();
+        const formData = new FormData();
+        
+        formData.append('postID', postID);
+        formData.append('postClass', postClass);
+        formData.append('description', description);
+        formData.append('repost', currDate);
+        formData.append('_csrf', $('meta[name="csrf-token"]').attr('content'));
+
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+
+        $.ajax({
+            url: '/repost',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                if (data.success) {
+                    alert('Post reposted successfully!');
+                    $('#repost-modal').modal('hide');
+                } else {
+                    alert('Failed to repost: ' + data.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error reposting:', error);
+                alert('An error occurred while reposting. Please try again.');
+            }
+        });
+    });
 });
