@@ -42,7 +42,6 @@ function likePost(e) {
     }
 }
 
-
 function flagPost(e) {
     const target = $(e.target);
     const post = target.closest(".ui.fluid.card.dim");
@@ -147,6 +146,32 @@ function onEnterSubmit(e) {
         e.preventDefault();
         postComment(e);
     }
+}
+
+function repostPost(e) {
+    const target = $(e.target).closest('.ui.repost.button');
+    const post = target.closest(".ui.fluid.card");
+    const postID = post.attr("postID");
+    const postClass = post.attr("postClass");
+    const currDate = Date.now();
+
+    $.post("/feed", {
+        postID: postID,
+        repost: currDate,
+        postClass: postClass,
+        _csrf: $('meta[name="csrf-token"]').attr('content')
+    }).done(function(response) {
+        if (response.success) {
+            // You can update the UI here to reflect the repost
+            // For example, you could change the button color or show a message
+            target.addClass("green");
+            alert("Post reposted successfully!");
+        } else {
+            alert("Error reposting: " + response.error);
+        }
+    }).fail(function() {
+        alert("Error reposting. Please try again later.");
+    });
 }
 
 $(document).ready(function() {
