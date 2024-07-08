@@ -149,11 +149,14 @@ function onEnterSubmit(e) {
 }
 
 function repostPost(e) {
+    console.log("Repost function called");
     const target = $(e.target).closest('.ui.repost.button');
     const post = target.closest(".ui.fluid.card");
     const postID = post.attr("postID");
     const postClass = post.attr("postClass");
     const currDate = Date.now();
+
+    console.log("Reposting post:", postID, postClass);
 
     $.post("/feed", {
         postID: postID,
@@ -161,15 +164,15 @@ function repostPost(e) {
         postClass: postClass,
         _csrf: $('meta[name="csrf-token"]').attr('content')
     }).done(function(response) {
+        console.log("Repost response:", response);
         if (response.success) {
-            // You can update the UI here to reflect the repost
-            // For example, you could change the button color or show a message
             target.addClass("green");
             alert("Post reposted successfully!");
         } else {
             alert("Error reposting: " + response.error);
         }
-    }).fail(function() {
+    }).fail(function(xhr, status, error) {
+        console.error("Repost error:", status, error);
         alert("Error reposting. Please try again later.");
     });
 }
