@@ -234,16 +234,6 @@ app.get('/test', passportConfig.isAuthenticated, function(req, res) {
     })
 });
 
-app.post('/feed', (req, res) => {
-  if (req.body.repost) {
-    // Handle repost logic here
-    console.log("Repost request received for post:", req.body.postID);
-    // Implement your repost logic
-    res.json({ success: true, message: "Post reposted successfully" });
-  } else {
-    // Handle other feed actions
-  }
-});
 
 app.post('/repost', passportConfig.isAuthenticated, scriptController.repostPost);
 
