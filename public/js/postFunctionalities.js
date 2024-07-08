@@ -149,32 +149,24 @@ function onEnterSubmit(e) {
 }
 
 function repostPost(e) {
-    console.log("Repost function called");
     const target = $(e.target).closest('.ui.repost.button');
-    const post = target.closest(".ui.fluid.card");
-    const postID = post.attr("postID");
-    const postClass = post.attr("postClass");
-    const currDate = Date.now();
+    const card = target.closest(".ui.fluid.card");
+    const postID = card.attr("postID");
+    const postClass = card.attr("postClass");
+    const postDescription = card.find(".description").text();
+    const postImageSrc = card.find(".img img").attr("src");
 
-    console.log("Reposting post:", postID, postClass);
+    // Populate the modal with the post's content
+    $('#repost-modal textarea[name="body"]').val(postDescription);
+    if (postImageSrc) {
+        $('#repost-modal img#imgInp').attr('src', postImageSrc).show();
+    } else {
+        $('#repost-modal img#imgInp').hide();
+    }
+    $('#repost-modal').modal('show');
 
-    $.post("/repost", {  // Changed from "/feed" to "/repost"
-        postID: postID,
-        repost: currDate,
-        postClass: postClass,
-        _csrf: $('meta[name="csrf-token"]').attr('content')
-    }).done(function(response) {
-        console.log("Repost response:", response);
-        if (response.success) {
-            target.addClass("green");
-            alert("Post reposted successfully!");
-        } else {
-            alert("Error reposting: " + response.error);
-        }
-    }).fail(function(xhr, status, error) {
-        console.error("Repost error:", status, error);
-        alert("Error reposting. Please try again later.");
-    });
+    // Store the postID and postClass in the modal for later use
+    $('#repost-modal').data('postID', postID).data('postClass', postClass);
 }
 
 $(document).ready(function() {
