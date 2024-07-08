@@ -158,7 +158,7 @@ function repostPost(e) {
 
     console.log("Reposting post:", postID, postClass);
 
-    $.post("/feed", {
+    $.post("/repost", {  // Changed from "/feed" to "/repost"
         postID: postID,
         repost: currDate,
         postClass: postClass,
