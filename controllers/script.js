@@ -116,36 +116,6 @@ exports.newPost = async(req, res, next) => {
     }
 };
 
-exports.repostPost = async (req, res, next) => {
-  console.log('Repost request received:', req.body);
-  try {
-    const { postID } = req.body;
-    const user = await User.findById(req.user.id).exec();
-
-    // Find the original post
-    const originalPost = await Script.findById(postID).populate('actor').exec();
-
-    if (!originalPost) {
-      return res.status(404).json({ success: false, message: 'Post not found' });
-    }
-
-    // Prepare the repost data
-    req.body.body = `Repost from ${originalPost.actor.profile.name}: ${originalPost.body}`;
-    req.body.repostID = postID;
-    req.body.repostBody = originalPost.body;
-    req.body.repostPicture = originalPost.picture;
-    req.file = {
-      filename: originalPost.picture
-    };
-
-    // Call the newPost function
-    await exports.newPost(req, res, next);
-
-  } catch (err) {
-    console.error('Error in repostPost:', err);
-    res.status(500).json({ success: false, message: 'Internal Server Error' });
-  }
-};
 
 /**
  * POST /feed/
