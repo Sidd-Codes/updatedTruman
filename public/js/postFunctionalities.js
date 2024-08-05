@@ -42,26 +42,7 @@ function likePost(e) {
     }
 }
 
-function repostPost(e) {
-    const target = $(e.target).closest('.ui.repost.button');
-    const card = target.closest(".ui.fluid.card");
-    const postID = card.attr("postID");
-    const postClass = card.attr("postClass");
-    const postDescription = card.find(".description").text();
-    const postImageSrc = card.find(".img img").attr("src");
 
-    // Populate the modal with the post's content
-    $('#repost-modal textarea[name="body"]').val(postDescription);
-    if (postImageSrc) {
-        $('#repost-modal img#imgInp').attr('src', postImageSrc).show();
-    } else {
-        $('#repost-modal img#imgInp').hide();
-    }
-    $('#repost-modal').modal('show');
-
-    // Store the postID and postClass in the modal for later use
-    $('#repost-modal').data('postID', postID).data('postClass', postClass);
-}
 
 function flagPost(e) {
     const target = $(e.target);
