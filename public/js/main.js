@@ -26,37 +26,70 @@ function resetActiveTimer(loggingOut) {
 function repostPost(event) {
     event.preventDefault();
     const target = $(event.target).closest('.ui.repost.button');
-    const postID = target.closest(".ui.fluid.card").attr("postID");
-    const postClass = target.closest(".ui.fluid.card").attr("postClass");
+    const card = target.closest(".ui.fluid.card");
+    const postID = card.attr("postID");
+    const postClass = card.attr("postClass");
+    const postDescription = card.find(".description").text();
+    const postImageSrc = card.find(".img img").attr("src");
+
+    console.log('Repost button clicked'); // Debugging log
+
+    // Populate the modal with the post's content
+    $('#repost-modal textarea[name="body"]').val(postDescription);
+    if (postImageSrc) {
+        $('#repost-modal img#imgInp').attr('src', postImageSrc).show();
+    } else {
+        $('#repost-modal img#imgInp').hide();
+    }
+    $('#repost-modal').modal('show');
+
+    // Store the postID and postClass in the modal for later use
+    $('#repost-modal').data('postID', postID).data('postClass', postClass);
+}
+
+// Handle the repost modal form submission
+$('#repost-form').on('submit', function(e) {
+    e.preventDefault();
+    
+    const postID = $('#repost-modal').data('postID');
+    const postClass = $('#repost-modal').data('postClass');
+    const description = $(this).find('textarea[name="body"]').val();
+    const imageFile = $(this).find('input[name="picinput"]')[0].files[0];
     const currDate = Date.now();
+    const formData = new FormData();
+    
+    formData.append('postID', postID);
+    formData.append('postClass', postClass);
+    formData.append('description', description);
+    formData.append('repost', currDate);
+    formData.append('_csrf', $('meta[name="csrf-token"]').attr('content'));
 
-    if (!target.hasClass("green")) { // Only repost if not already reposted
-        target.addClass("green");
+    if (imageFile) {
+        formData.append('image', imageFile);
+    }
 
-        $.post("/repost", {
-            postID: postID,
-            postClass: postClass,
-            repost: currDate,
-            _csrf: $('meta[name="csrf-token"]').attr('content')
-        }).done(function(data) {
+    $.ajax({
+        url: '/repost',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
             if (data.success) {
                 alert('Post reposted successfully!');
+                $('#repost-modal').modal('hide');
+                // Optionally add the reposted post to the feed
                 addRepostedPostToFeed(data.post);
             } else {
                 alert('Failed to repost: ' + data.message);
-                target.removeClass("green");
             }
-        }).fail(function(xhr, status, error) {
+        },
+        error: function(xhr, status, error) {
             console.error('Error reposting:', error);
-            console.error('Status:', status);
-            console.error('Response:', xhr.responseText);
-            alert('An error occurred while reposting. Please try again. Error: ' + error);
-            target.removeClass("green");
-        });
-    } else {
-        alert('You have already reposted this post.');
-    }
-}
+            alert('An error occurred while reposting. Please try again.');
+        }
+    });
+});
 
 function addRepostedPostToFeed(postData) {
     // Create HTML for the reposted post
