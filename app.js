@@ -235,7 +235,7 @@ app.get('/test', passportConfig.isAuthenticated, function(req, res) {
 });
 
 
-app.post('/repost', passportConfig.isAuthenticated, scriptController.repostPost);
+//app.post('/repost', passportConfig.isAuthenticated, scriptController.repostPost);
 
 /**
  * Error Handler.
