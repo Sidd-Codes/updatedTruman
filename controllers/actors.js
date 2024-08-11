@@ -2,6 +2,31 @@ const Actor = require('../models/Actor.js');
 const Script = require('../models/Script.js');
 const User = require('../models/User');
 const helpers = require('./helpers');
+const lexService = require('./lexService');
+
+
+exports.interactWithActor = async(req, res, next) => {
+    try {
+        const actor = await Actor.findOne({ username: req.params.userId }).exec();
+        if (!actor) {
+            return res.status(404).send('Actor not found');
+        }
+
+        const userMessage = req.body.message;  // Message sent by the user
+        const lexResponse = await lexService.sendMessageToLex(req.user.id, userMessage);  // Send message to Lex
+
+        // Process the response from Lex and generate a reply
+        const actorResponse = lexResponse.message;
+
+        // Optionally, log the conversation or update the UI
+        res.send({
+            actor: actor.username,
+            response: actorResponse
+        });
+    } catch (err) {
+        next(err);
+    }
+};
 
 /**
  * GET /actors
