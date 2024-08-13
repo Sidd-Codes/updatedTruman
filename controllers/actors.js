@@ -4,73 +4,32 @@ const User = require('../models/User');
 const helpers = require('./helpers');
 const lexService = require('./lexService');
 
-
-exports.interactWithActor = async(req, res, next) => {
+// Function to create a Lex bot actor
+exports.createLexBotActor = async(req, res, next) => {
     try {
-        const actor = await Actor.findOne({ username: req.params.userId }).exec();
-        if (!actor) {
-            return res.status(404).send('Actor not found');
-        }
-
-        const userMessage = req.body.message;  // Message sent by the user
-        const lexResponse = await lexService.sendMessageToLex(req.user.id, userMessage);  // Send message to Lex
-
-        // Process the response from Lex and generate a reply
-        const actorResponse = lexResponse.message;
-
-        // Optionally, log the conversation or update the UI
-        res.send({
-            actor: actor.username,
-            response: actorResponse
+        const lexBotActor = new Actor({
+            username: 'lexBot_' + Date.now(), // Create a unique username
+            profile: {
+                name: 'Lex Bot',
+                gender: 'N/A',
+                age: 0,
+                location: 'Cloud',
+                bio: 'An AI-powered bot interacting through Amazon Lex.',
+                picture: 'default_lexbot.png' // Provide a default image or icon for Lex bot
+            },
+            class: 'lexBot' // Mark this actor as a Lex bot
         });
+
+        await lexBotActor.save();
+        res.status(201).send({ message: 'Lex bot actor created successfully', actor: lexBotActor });
     } catch (err) {
         next(err);
     }
 };
-
-/**
- * GET /actors
- * If the current user is an admin, retrieve all the actors from the database and render them to the page '../views/actors'.
- * If the current user is not an admin, redirect the user to the home page. 
- */
-exports.getActor = async(req, res, next) => {
-    try {
-        const user = await User.findById(req.user.id).exec();
-        const actor = await Actor.findOne({ username: req.params.userId }).exec();
-
-        if (!actor) {
-            return res.status(404).send('Actor not found');
-        }
-
-        if (actor.isLexBot) {
-            // Handle Lex bot-specific behavior
-            const lexResponse = await lexService.sendMessageToLex(req.user.id, "Hello from the bot!"); // Example interaction
-            return res.render('actor', { script: [{ content: lexResponse.message }], actor: actor });
-        }
-
-        const isBlocked = user.blocked.includes(req.params.userId);
-        const isReported = user.reported.includes(req.params.userId);
-        const time_diff = Date.now() - req.user.createdAt;
-
-        const script_feed = await Script.find({ actor: actor.id, class: { "$in": ["", user.experimentalCondition] } })
-            .where('time').lte(time_diff)
-            .sort('-time')
-            .populate('actor')
-            .populate('comments.actor')
-            .exec();
-
-        const finalfeed = helpers.getFeed([], script_feed, user, 'CHRONOLOGICAL', true, false);
-        await user.save();
-        res.render('actor', { script: finalfeed, actor: actor, isBlocked: isBlocked, isReported: isReported, title: actor.profile.name });
-    } catch (err) {
-        next(err);
-    }
-};
-
 
 /**
  * GET /user/:userId
- * Retrieve the profile and relevant experimental posts of the actor whose username field value matches the query parameter value 'userId'. 
+ * Retrieve the profile and relevant experimental posts of the actor whose username field value matches the query parameter value 'userId'.
  * Process the posts with the helper function .getFeed() in ./helpers.js.
  * Check if the current user has blocked or reported the actor.
  * Render the actor's profile page along with the relevant data.
@@ -84,18 +43,26 @@ exports.getActor = async(req, res, next) => {
             const myerr = new Error('Actor object not found!');
             return next(myerr);
         }
-        const isBlocked = user.blocked.includes(req.params.userId);
-        const isReported = user.reported.includes(req.params.userId);
-        const script_feed = await Script.find({ actor: actor.id, class: { "$in": ["", user.experimentalCondition] } })
-            .where('time').lte(time_diff)
-            .sort('-time')
-            .populate('actor')
-            .populate('comments.actor')
-            .exec();
 
-        const finalfeed = helpers.getFeed([], script_feed, user, 'CHRONOLOGICAL', true, false);
-        await user.save();
-        res.render('actor', { script: finalfeed, actor: actor, isBlocked: isBlocked, isReported: isReported, title: actor.profile.name });
+        if (actor.class === 'lexBot') {
+            // If the actor is a Lex bot, send the initial interaction
+            const lexResponse = await lexService.sendMessageToLex(req.user.id, "start");
+            const finalfeed = [{ content: lexResponse.message }]; // Display the Lex bot's initial message
+            res.render('actor', { script: finalfeed, actor: actor, isBlocked: false, isReported: false, title: actor.profile.name });
+        } else {
+            const isBlocked = user.blocked.includes(req.params.userId);
+            const isReported = user.reported.includes(req.params.userId);
+            const script_feed = await Script.find({ actor: actor.id, class: { "$in": ["", user.experimentalCondition] } })
+                .where('time').lte(time_diff)
+                .sort('-time')
+                .populate('actor')
+                .populate('comments.actor')
+                .exec();
+
+            const finalfeed = helpers.getFeed([], script_feed, user, 'CHRONOLOGICAL', true, false);
+            await user.save();
+            res.render('actor', { script: finalfeed, actor: actor, isBlocked: isBlocked, isReported: isReported, title: actor.profile.name });
+        }
     } catch (err) {
         next(err);
     }
@@ -176,4 +143,4 @@ exports.postBlockReportOrFollow = async(req, res, next) => {
     } catch (err) {
         next(err);
     }
-}
+};
