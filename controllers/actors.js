@@ -33,18 +33,40 @@ exports.interactWithActor = async(req, res, next) => {
  * If the current user is an admin, retrieve all the actors from the database and render them to the page '../views/actors'.
  * If the current user is not an admin, redirect the user to the home page. 
  */
-exports.getActors = async(req, res) => {
-    if (!req.user.isAdmin) {
-        res.redirect('/');
-    } else {
-        try {
-            const actors = await Actor.find().exec();
-            res.render('actors', { actors: actors });
-        } catch (err) {
-            next(err);
+exports.getActor = async(req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id).exec();
+        const actor = await Actor.findOne({ username: req.params.userId }).exec();
+
+        if (!actor) {
+            return res.status(404).send('Actor not found');
         }
+
+        if (actor.isLexBot) {
+            // Handle Lex bot-specific behavior
+            const lexResponse = await lexService.sendMessageToLex(req.user.id, "Hello from the bot!"); // Example interaction
+            return res.render('actor', { script: [{ content: lexResponse.message }], actor: actor });
+        }
+
+        const isBlocked = user.blocked.includes(req.params.userId);
+        const isReported = user.reported.includes(req.params.userId);
+        const time_diff = Date.now() - req.user.createdAt;
+
+        const script_feed = await Script.find({ actor: actor.id, class: { "$in": ["", user.experimentalCondition] } })
+            .where('time').lte(time_diff)
+            .sort('-time')
+            .populate('actor')
+            .populate('comments.actor')
+            .exec();
+
+        const finalfeed = helpers.getFeed([], script_feed, user, 'CHRONOLOGICAL', true, false);
+        await user.save();
+        res.render('actor', { script: finalfeed, actor: actor, isBlocked: isBlocked, isReported: isReported, title: actor.profile.name });
+    } catch (err) {
+        next(err);
     }
 };
+
 
 /**
  * GET /user/:userId
