@@ -18,6 +18,8 @@ const schedule = require('node-schedule');
 const multer = require('multer');
 const fs = require('fs');
 const util = require('util');
+const AWS = require('aws-sdk');
+const lexService = require('./services/lexService');
 fs.readFileAsync = util.promisify(fs.readFile);
 
 /**
@@ -47,6 +49,12 @@ const useravatarupload = multer({ storage: useravatar_options });
  * Load environment variables from .env file.
  */
 dotenv.config({ path: '.env' });
+
+AWS.config.update({
+    region: process.env.AWS_REGION,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+});
 
 /**
  * Controllers (route handlers).
@@ -126,6 +134,7 @@ app.use(session({
         mongoUrl: process.env.MONGODB_URI,
     })
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
@@ -178,6 +187,7 @@ app.use('/profile_pictures', express.static(path.join(__dirname, 'profile_pictur
  */
 app.get('/', passportConfig.isAuthenticated, scriptController.getScript);
 
+app.post('/lexbot/interact', passportConfig.isAuthenticated, actorsController.handleLexBotInteraction);
 app.post('/post/new', userpostupload.single('picinput'), scriptController.newPost);
 app.post('/pageLog', passportConfig.isAuthenticated, userController.postPageLog);
 app.post('/pageTimes', passportConfig.isAuthenticated, userController.postPageTime);
