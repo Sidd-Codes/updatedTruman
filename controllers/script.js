@@ -300,3 +300,65 @@ exports.postUpdateUserPostFeedAction = async(req, res, next) => {
         next(err);
     }
 }
+
+const lexService = require('./lexService');
+const Actor = require('../models/Actor');
+
+// Function to create a new Lex bot post
+exports.createLexBotPost = async () => {
+    try {
+        const lexBotActor = await Actor.findOne({ class: 'lexBot' });
+        const postContent = await lexService.getLexBotResponse('GeneratePost');
+        
+        const newPost = new Script({
+            actor: lexBotActor._id,
+            body: postContent,
+            class: 'lexBot',
+            time: Date.now()
+        });
+        
+        await newPost.save();
+        console.log('Lex bot post created');
+    } catch (error) {
+        console.error('Error creating Lex bot post:', error);
+    }
+};
+
+// Function to create a Lex bot comment on a post
+exports.createLexBotComment = async (postId) => {
+    try {
+        const post = await Script.findById(postId);
+        const lexBotActor = await Actor.findOne({ class: 'lexBot' });
+        
+        const commentContent = await lexService.getLexBotResponse('GenerateComment', { postContent: post.body });
+        
+        post.comments.push({
+            actor: lexBotActor._id,
+            body: commentContent,
+            new_comment: false,
+            absTime: Date.now(),
+            relativeTime: Date.now() - lexBotActor.createdAt
+        });
+        
+        await post.save();
+        console.log('Lex bot comment created');
+    } catch (error) {
+        console.error('Error creating Lex bot comment:', error);
+    }
+};
+
+// Function to like a post as Lex bot
+exports.lexBotLikePost = async (postId) => {
+    try {
+        const post = await Script.findById(postId);
+        const lexBotActor = await Actor.findOne({ class: 'lexBot' });
+        
+        if (!post.likes.includes(lexBotActor._id)) {
+            post.likes.push(lexBotActor._id);
+            await post.save();
+            console.log('Lex bot liked post');
+        }
+    } catch (error) {
+        console.error('Error liking post:', error);
+    }
+};
