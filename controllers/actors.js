@@ -2,7 +2,7 @@ const Actor = require('../models/Actor.js');
 const Script = require('../models/Script.js');
 const User = require('../models/User');
 const helpers = require('./helpers');
-const lexService = require('../lexService.js');
+//const lexService = require('../lexService.js');
 
 // Function to create a Lex bot actor
 exports.createLexBotActor = async(req, res, next) => {
