@@ -27,6 +27,18 @@ exports.createLexBotActor = async(req, res, next) => {
     }
 };
 
+exports.handleLexBotInteraction = async (req, res, next) => {
+    try {
+        // Your Lex bot interaction logic here
+        // For example:
+        const userInput = req.body.userInput;
+        const lexResponse = await lexService.getLexBotResponse(userInput);
+        res.json({ message: lexResponse.message });
+    } catch (error) {
+        next(error);
+    }
+};
+
 /**
  * GET /user/:userId
  * Retrieve the profile and relevant experimental posts of the actor whose username field value matches the query parameter value 'userId'.
