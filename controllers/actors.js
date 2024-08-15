@@ -46,7 +46,7 @@ exports.getActor = async(req, res, next) => {
 
         if (actor.class === 'lexBot') {
             // If the actor is a Lex bot, send the initial interaction
-            const lexResponse = await lexService.sendMessageToLex(req.user.id, "start");
+            const lexResponse = await lexService.getLexBotResponse("start");
             const finalfeed = [{ content: lexResponse.message }]; // Display the Lex bot's initial message
             res.render('actor', { script: finalfeed, actor: actor, isBlocked: false, isReported: false, title: actor.profile.name });
         } else {
