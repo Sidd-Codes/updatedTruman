@@ -301,7 +301,7 @@ exports.postUpdateUserPostFeedAction = async(req, res, next) => {
     }
 }
 
-const lexService = require('./lexService');
+const lexService = require('../lexService');
 const Actor = require('../models/Actor');
 
 // Function to create a new Lex bot post
