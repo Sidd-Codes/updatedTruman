@@ -39,6 +39,19 @@ exports.handleLexBotInteraction = async (req, res, next) => {
     }
 };
 
+exports.getActors = async(req, res) => {
+    if (!req.user.isAdmin) {
+        res.redirect('/');
+    } else {
+        try {
+            const actors = await Actor.find().exec();
+            res.render('actors', { actors: actors });
+        } catch (err) {
+            next(err);
+        }
+    }
+};
+
 /**
  * GET /user/:userId
  * Retrieve the profile and relevant experimental posts of the actor whose username field value matches the query parameter value 'userId'.
