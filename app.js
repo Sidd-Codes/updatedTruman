@@ -19,7 +19,7 @@ const multer = require('multer');
 const fs = require('fs');
 const util = require('util');
 const AWS = require('aws-sdk');
-const lexService = require('./services/lexService');
+const lexService = require('./lexService');
 fs.readFileAsync = util.promisify(fs.readFile);
 
 /**
