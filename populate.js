@@ -14,7 +14,7 @@ const mongoose = require('mongoose');
 const CSVToJSON = require("csvtojson");
 
 // Import necessary classes from the OpenAI library
-const { OpenAIClient, Configuration, OpenAIApi } = require('openai');
+const { Configuration, OpenAIApi } = require('openai');
 
 //Input Files
 const actor_inputFile = './input/actors.csv';
