@@ -29,6 +29,11 @@ var notification_reply_list;
 
 dotenv.config({ path: '.env' });
 
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
+
 mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, { useNewUrlParser: true });
 var db = mongoose.connection;
 mongoose.connection.on('error', (err) => {
@@ -36,6 +41,22 @@ mongoose.connection.on('error', (err) => {
     console.log(color_error, '%s MongoDB connection error. Please make sure MongoDB is running.');
     process.exit(1);
 });
+
+// Function to generate a comment using GPT
+async function generateComment(postBody) {
+  try {
+    const response = await openai.createCompletion({
+      model: "text-davinci-003", // or any other GPT-3/4 model you are using
+      prompt: `Generate a comment for the following post: ${postBody}`,
+      max_tokens: 50, // Adjust the token count as needed
+      temperature: 0.7, // Controls the creativity of the response
+    });
+    return response.data.choices[0].text.trim();
+  } catch (error) {
+    console.error('Error generating comment:', error);
+    return 'Sorry, I couldn\'t generate a comment.';
+  }
+}
 
 /*
 This is a huge function of chained promises, done to achieve serial completion of asynchronous actions.
@@ -210,52 +231,53 @@ async function doPopulate() {
         .then(function(result) {
             console.log(color_start, "Starting to populate post replies...");
             return new Promise((resolve, reject) => {
-                async.eachSeries(comment_list, async function(new_reply, callback) {
-                        const act = await Actor.findOne({ username: new_reply.actor }).exec();
-                        if (act) {
-                            const pr = await Script.findOne({ postID: new_reply.postID }).exec();
-                            if (pr) {
-                                const comment_detail = {
-                                    commentID: new_reply.id,
-                                    body: new_reply.body,
-                                    likes: getLikesComment(),
-                                    actor: act,
-                                    time: timeStringToNum(new_reply.time),
-                                    class: new_reply.class
-                                };
-
-                                pr.comments.push(comment_detail);
-                                pr.comments.sort(function(a, b) { return a.time - b.time; });
-
-                                try {
-                                    await pr.save();
-                                } catch (err) {
-                                    console.log(color_error, "ERROR: Something went wrong with saving reply in database");
-                                    next(err);
-                                }
-                            } else { //Else no post found
-                                console.log(color_error, "ERROR: Post not found in database");
-                                callback();
-                            }
-
-                        } else { //Else no actor found
-                            console.log(color_error, "ERROR: Actor not found in database");
-                            callback();
-                        }
-                    },
-                    function(err) {
-                        if (err) {
-                            console.log(color_error, "ERROR: Something went wrong with saving replies in database");
-                            callback(err);
-                        }
-                        // Return response
-                        console.log(color_success, "All replies added to database!");
-                        resolve('Promise is resolved successfully.');
-                        return 'Loaded Replies';
+              async.eachSeries(posts_list, async function(post, callback) {
+                const act = await Actor.findOne({ username: post.actor }).exec();
+                if (act) {
+                  // Generate a comment using GPT
+                  const generatedComment = await generateComment(post.body);
+        
+                  const comment_detail = {
+                    commentID: generateUniqueId(), // Implement or adjust function to generate unique IDs
+                    body: generatedComment,
+                    likes: getLikesComment(),
+                    actor: act,
+                    time: timeStringToNum(post.time),
+                    class: post.class
+                  };
+        
+                  // Save the comment to the post
+                  const pr = await Script.findOne({ postID: post.id }).exec();
+                  if (pr) {
+                    pr.comments.push(comment_detail);
+                    pr.comments.sort(function(a, b) { return a.time - b.time; });
+        
+                    try {
+                      await pr.save();
+                    } catch (err) {
+                      console.log(color_error, "ERROR: Something went wrong with saving reply in database");
+                      return callback(err);
                     }
-                );
-
+                  } else { // No post found
+                    console.log(color_error, "ERROR: Post not found in database");
+                    return callback();
+                  }
+                } else { // No actor found
+                  console.log(color_error, "ERROR: Actor not found in database");
+                  return callback();
+                }
+              },
+              function(err) {
+                if (err) {
+                  console.log(color_error, "ERROR: Something went wrong with saving replies in database");
+                  return reject(err);
+                }
+                // Return response
+                console.log(color_success, "All replies added to database!");
+                resolve('Promise is resolved successfully.');
+              });
             });
+
             /*************************
             Creates each notification(replies) and uploads it to the DB
             Actors must be in DB first to add them correctly to the post
@@ -387,6 +409,10 @@ function getLikesComment() {
     var notRandomNumbers = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4];
     var idx = Math.floor(Math.random() * notRandomNumbers.length);
     return notRandomNumbers[idx];
+}
+
+function generateUniqueId() {
+  return 'comment-' + Date.now(); // Simple unique ID generator; adjust as needed
 }
 
 //Call the function with the long chain of promises
