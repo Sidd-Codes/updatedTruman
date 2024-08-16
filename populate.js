@@ -13,6 +13,9 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const CSVToJSON = require("csvtojson");
 
+// Import necessary classes from the OpenAI library
+const { OpenAIClient, Configuration, OpenAIApi } = require('openai');
+
 //Input Files
 const actor_inputFile = './input/actors.csv';
 const posts_inputFile = './input/posts.csv';
@@ -28,6 +31,7 @@ var notification_list;
 var notification_reply_list;
 
 dotenv.config({ path: '.env' });
+
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
