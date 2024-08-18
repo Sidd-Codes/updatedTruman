@@ -240,7 +240,7 @@ async function doPopulate() {
                 if (act) {
                   // Generate a comment using GPT
                   const generatedComment = await generateComment(post.body);
-        
+                  console.log('Generated Comment:', generatedComment);
                   const comment_detail = {
                     commentID: generateUniqueId(), // Implement or adjust function to generate unique IDs
                     body: generatedComment,
