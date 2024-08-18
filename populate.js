@@ -258,10 +258,11 @@ async function doPopulate() {
         
                     try {
                       await pr.save();
-                    } catch (err) {
+                      console.log(color_success, "Comment saved successfully!"); // <-- Insert this line
+                  } catch (err) {
                       console.log(color_error, "ERROR: Something went wrong with saving reply in database");
                       return callback(err);
-                    }
+                  }
                   } else { // No post found
                     console.log(color_error, "ERROR: Post not found in database");
                     return callback();
