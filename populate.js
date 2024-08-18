@@ -228,7 +228,4 @@ async function doPopulate() {
                     }
                 );
             });
-            /*************************
-            Creates inline comments for each post
-            Looks up actors and posts to insert the correct comment
-            Does this in series to ensure comments are put in the
+            
