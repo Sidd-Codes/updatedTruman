@@ -62,13 +62,6 @@ function getLikes() {
   return Math.floor(Math.random() * 1001); // Random number of likes between 0 and 1000
 }
 
-function timeStringToNum(timeString) {
-    // Example: Convert 'YYYY-MM-DD HH:MM:SS' to a Unix timestamp
-    const date = new Date(timeString);
-    return date.getTime(); // Returns the timestamp in milliseconds
-}
-
-
 async function doPopulate() {
     try {
         // Dropping collections
@@ -198,6 +191,18 @@ async function doPopulate() {
         process.exit(0);
     }
 }
+
+function timeStringToNum(v) {
+    var timeParts = v.split(":");
+    if (timeParts[0] == "-0")
+    // -0:XX
+        return -1 * parseInt(((timeParts[0] * (60000 * 60)) + (timeParts[1] * 60000)), 10);
+    else if (timeParts[0].startsWith('-'))
+    //-X:XX
+        return parseInt(((timeParts[0] * (60000 * 60)) + (-1 * (timeParts[1] * 60000))), 10);
+    else
+        return parseInt(((timeParts[0] * (60000 * 60)) + (timeParts[1] * 60000)), 10);
+};
 
 doPopulate();
 
