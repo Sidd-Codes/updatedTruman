@@ -316,7 +316,7 @@ async function doPopulate() {
             console.error(color_error, "An error occurred:", err);
             process.exit(1);
         });
-}
+
 
 doPopulate();
 
