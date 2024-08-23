@@ -317,7 +317,7 @@ async function doPopulate() {
             process.exit(1);
         });
 
-
+    })
 doPopulate();
 
 console.log(color_start, 'Finished populate.js script...');
