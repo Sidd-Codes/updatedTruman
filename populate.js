@@ -65,83 +65,41 @@ This is a huge function of chained promises, done to achieve serial completion o
 There's probably a better way to do this, but this worked.
 */
 async function doPopulate() {
-    /****
-    Dropping collections
-    ****/
-    let promise = new Promise((resolve, reject) => { // Drop the actors collection
+    try {
         console.log(color_start, "Dropping actors...");
-        db.collections['actors'].drop(function(err) {
-            if (err) return reject(err);
-            console.log(color_success, 'Actors collection dropped');
-            resolve("done");
-        });
-    }).then(function(result) { // Drop the scripts collection
-        return new Promise((resolve, reject) => {
-            console.log(color_start, "Dropping scripts...");
-            db.collections['scripts'].drop(function(err) {
-                if (err) return reject(err);
-                console.log(color_success, 'Scripts collection dropped');
-                resolve("done");
-            });
-        });
-    }).then(function(result) { // Drop the notifications collection
-        return new Promise((resolve, reject) => {
-            console.log(color_start, "Dropping notifications...");
-            db.collections['notifications'].drop(function(err) {
-                if (err) return reject(err);
-                console.log(color_success, 'Notifications collection dropped');
-                resolve("done");
-            });
-        });
-    }).then(function(result) { // Convert the actors csv file to json, store in actors_list
-        return new Promise((resolve, reject) => {
-            console.log(color_start, "Reading actors list...");
-            CSVToJSON().fromFile(actor_inputFile).then(function(json_array) {
-                actors_list = json_array;
-                console.log(color_success, "Finished getting the actors_list");
-                resolve("done");
-            }).catch(reject);
-        });
-    }).then(function(result) { // Convert the posts csv file to json, store in posts_list
-        return new Promise((resolve, reject) => {
-            console.log(color_start, "Reading posts list...");
-            CSVToJSON().fromFile(posts_inputFile).then(function(json_array) {
-                posts_list = json_array;
-                console.log(color_success, "Finished getting the posts list");
-                resolve("done");
-            }).catch(reject);
-        });
-    }).then(function(result) { // Convert the comments csv file to json, store in comment_list
-        return new Promise((resolve, reject) => {
-            console.log(color_start, "Reading comment list...");
-            CSVToJSON().fromFile(replies_inputFile).then(function(json_array) {
-                comment_list = json_array;
-                console.log(color_success, "Finished getting the comment list");
-                resolve("done");
-            }).catch(reject);
-        });
-    }).then(function(result) { // Convert the notifications csv file to json, store in notification_list
-        return new Promise((resolve, reject) => {
-            console.log(color_start, "Reading notification list...");
-            CSVToJSON().fromFile(notifications_inputFile).then(function(json_array) {
-                notification_list = json_array;
-                console.log(color_success, "Finished getting the notification list");
-                resolve("done");
-            }).catch(reject);
-        });
-    }).then(function(result) { // Convert the notification reply csv file to json, store in notification_reply_list
-        return new Promise((resolve, reject) => {
-            console.log(color_start, "Reading notification reply list...");
-            CSVToJSON().fromFile(notifications_replies_inputFile).then(function(json_array) {
-                notification_reply_list = json_array;
-                console.log(color_success, "Finished getting the notification reply list");
-                resolve("done");
-            }).catch(reject);
-        });
-      .then(function(result) {
-    console.log(color_start, "Starting to populate actors collection...");
-    return new Promise((resolve, reject) => {
-        async.eachSeries(actors_list, async function(actor_raw, callback) {
+        await db.collections['actors'].drop();
+        console.log(color_success, 'Actors collection dropped');
+
+        console.log(color_start, "Dropping scripts...");
+        await db.collections['scripts'].drop();
+        console.log(color_success, 'Scripts collection dropped');
+
+        console.log(color_start, "Dropping notifications...");
+        await db.collections['notifications'].drop();
+        console.log(color_success, 'Notifications collection dropped');
+
+        console.log(color_start, "Reading actors list...");
+        actors_list = await CSVToJSON().fromFile(actor_inputFile);
+        console.log(color_success, "Finished getting the actors_list");
+
+        console.log(color_start, "Reading posts list...");
+        posts_list = await CSVToJSON().fromFile(posts_inputFile);
+        console.log(color_success, "Finished getting the posts list");
+
+        console.log(color_start, "Reading comment list...");
+        comment_list = await CSVToJSON().fromFile(replies_inputFile);
+        console.log(color_success, "Finished getting the comment list");
+
+        console.log(color_start, "Reading notification list...");
+        notification_list = await CSVToJSON().fromFile(notifications_inputFile);
+        console.log(color_success, "Finished getting the notification list");
+
+        console.log(color_start, "Reading notification reply list...");
+        notification_reply_list = await CSVToJSON().fromFile(notifications_replies_inputFile);
+        console.log(color_success, "Finished getting the notification reply list");
+
+        console.log(color_start, "Starting to populate actors collection...");
+        for (const actor_raw of actors_list) {
             const actordetail = {
                 username: actor_raw.username,
                 profile: {
@@ -156,138 +114,81 @@ async function doPopulate() {
             };
 
             const actor = new Actor(actordetail);
-            try {
-                await actor.save();
-                callback(); // Call callback to signal success
-            } catch (err) {
-                console.log(color_error, "ERROR: Something went wrong with saving actor in database");
-                callback(err); // Pass the error to callback
-            }
-        }, function(err) {
-            if (err) {
-                console.log(color_error, "ERROR: Something went wrong with saving actors in database");
-                return reject(err); // Reject promise with the error
-            }
-            console.log(color_success, "All actors added to database!");
-            resolve('Promise is resolved successfully.'); // Resolve promise after completion
-        });
-    });
-}).then(function(result) {
+            await actor.save();
+        }
+        console.log(color_success, "All actors added to database!");
+
         console.log(color_start, "Starting to populate posts collection...");
-        return new Promise((resolve, reject) => {
-            async.each(posts_list, async function(new_post, callback) {
-                const act = await Actor.findOne({ username: new_post.actor }).exec();
-                if (act) {
-                    const postdetail = {
-                        postID: new_post.id,
-                        body: new_post.body,
-                        picture: new_post.picture,
-                        likes: getLikes(),
-                        actor: act,
-                        time: timeStringToNum(new_post.time) || null,
-                        class: new_post.class
-                    };
+        for (const new_post of posts_list) {
+            const act = await Actor.findOne({ username: new_post.actor }).exec();
+            if (act) {
+                const postdetail = {
+                    postID: new_post.id,
+                    body: new_post.body,
+                    picture: new_post.picture,
+                    likes: getLikes(),
+                    actor: act,
+                    time: timeStringToNum(new_post.time) || null,
+                    class: new_post.class
+                };
 
-                    const script = new Script(postdetail);
-                    try {
-                        await script.save();
-                        callback();
-                    } catch (err) {
-                        console.log(color_error, "ERROR: Something went wrong with saving post in database");
-                        callback(err);
-                    }
-                } else { // Else no actor found
-                    console.log(color_error, "ERROR: Actor not found in database");
-                    callback();
-                }
-            }, function(err) {
-                if (err) {
-                    console.log(color_error, "ERROR: Something went wrong with saving posts in database");
-                    return reject(err);
-                }
-                console.log(color_success, "All posts added to database!");
-                resolve('Promise is resolved successfully.');
-            });
-        });
-    }).then(function(result) {
+                const script = new Script(postdetail);
+                await script.save();
+            } else {
+                console.log(color_error, "ERROR: Actor not found in database");
+            }
+        }
+        console.log(color_success, "All posts added to database!");
+
         console.log(color_start, "Starting to populate post replies...");
-        return new Promise((resolve, reject) => {
-            async.eachSeries(posts_list, async function(post, callback) {
-                const act = await Actor.findOne({ username: post.actor }).exec();
-                if (act) {
-                    // Generate a comment using GPT
-                    const generatedComment = await generateComment(post.body);
-                    const postdetail = {
-                        postID: post.id,
-                        body: generatedComment,
-                        actor: act,
-                        time: timeStringToNum(post.time) || null,
-                        class: post.class
-                    };
-                    const script = new Script(postdetail);
-                    try {
-                        await script.save();
-                        callback();
-                    } catch (err) {
-                        console.log(color_error, "ERROR: Something went wrong with saving reply in database");
-                        callback(err);
-                    }
-                } else {
-                    console.log(color_error, "ERROR: Actor not found in database");
-                    callback();
-                }
-            }, function(err) {
-                if (err) {
-                    console.log(color_error, "ERROR: Something went wrong with saving replies in database");
-                    return reject(err);
-                }
-                console.log(color_success, "All replies added to database!");
-                resolve('Promise is resolved successfully.');
-            });
-        });
-    }).then(function(result) {
-        console.log(color_start, "Starting to populate notifications collection...");
-        return new Promise((resolve, reject) => {
-            async.each(notification_list, async function(new_notification, callback) {
-                const act = await Actor.findOne({ username: new_notification.actor }).exec();
-                const post = await Script.findOne({ postID: new_notification.postID }).exec();
-                if (act && post) {
-                    const notification = new Notification({
-                        notificationType: new_notification.type,
-                        post: post,
-                        actor: act,
-                        timestamp: timeStringToNum(new_notification.time)
-                    });
+        for (const post of posts_list) {
+            const act = await Actor.findOne({ username: post.actor }).exec();
+            if (act) {
+                const generatedComment = await generateComment(post.body);
+                const postdetail = {
+                    postID: post.id,
+                    body: generatedComment,
+                    actor: act,
+                    time: timeStringToNum(post.time) || null,
+                    class: post.class
+                };
 
-                    try {
-                        await notification.save();
-                        callback();
-                    } catch (err) {
-                        console.log(color_error, "ERROR: Something went wrong with saving notification in database");
-                        callback(err);
-                    }
-                } else { // Else no actor found
-                    console.log(color_error, "ERROR: Actor or post not found in database");
-                    callback();
-                }
-            }, function(err) {
-                if (err) {
-                    console.log(color_error, "ERROR: Something went wrong with saving notifications in database");
-                    return reject(err);
-                }
-                console.log(color_success, "All notifications added to database!");
-                resolve('Promise is resolved successfully.');
-            });
-        });
-    }).then(function(result) {
+                const script = new Script(postdetail);
+                await script.save();
+            } else {
+                console.log(color_error, "ERROR: Actor not found in database");
+            }
+        }
+        console.log(color_success, "All replies added to database!");
+
+        console.log(color_start, "Starting to populate notifications collection...");
+        for (const new_notification of notification_list) {
+            const act = await Actor.findOne({ username: new_notification.actor }).exec();
+            const post = await Script.findOne({ postID: new_notification.postID }).exec();
+            if (act && post) {
+                const notification = new Notification({
+                    notificationType: new_notification.type,
+                    post: post,
+                    actor: act,
+                    timestamp: timeStringToNum(new_notification.time)
+                });
+
+                await notification.save();
+            } else {
+                console.log(color_error, "ERROR: Actor or post not found in database");
+            }
+        }
+        console.log(color_success, "All notifications added to database!");
+
         console.log(color_success, "Successfully populated database.");
         process.exit(0);
-    }).catch(function(err) {
+    } catch (err) {
         console.error(color_error, "An error occurred:", err);
         process.exit(1);
-    });
+    }
 }
 
 doPopulate();
 
 console.log(color_start, 'Finished populate.js script...');
+
