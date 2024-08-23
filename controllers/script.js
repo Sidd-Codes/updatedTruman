@@ -301,64 +301,48 @@ exports.postUpdateUserPostFeedAction = async(req, res, next) => {
     }
 }
 
-const lexService = require('../lexService');
-const Actor = require('../models/Actor');
+const { Configuration, OpenAIApi } = require("openai");
 
-// Function to create a new Lex bot post
-exports.createLexBotPost = async () => {
-    try {
-        const lexBotActor = await Actor.findOne({ class: 'lexBot' });
-        const postContent = await lexService.getLexBotResponse('GeneratePost');
-        
-        const newPost = new Script({
-            actor: lexBotActor._id,
-            body: postContent,
-            class: 'lexBot',
-            time: Date.now()
-        });
-        
-        await newPost.save();
-        console.log('Lex bot post created');
-    } catch (error) {
-        console.error('Error creating Lex bot post:', error);
-    }
-};
+const configuration = new Configuration({
+    apiKey: process.env.OPENAI_API_KEY, // Ensure your API key is stored in your .env file
+});
 
-// Function to create a Lex bot comment on a post
-exports.createLexBotComment = async (postId) => {
+const openai = new OpenAIApi(configuration);
+
+exports.createAiGeneratedComment = async (postId) => {
     try {
         const post = await Script.findById(postId);
-        const lexBotActor = await Actor.findOne({ class: 'lexBot' });
-        
-        const commentContent = await lexService.getLexBotResponse('GenerateComment', { postContent: post.body });
-        
+        const aiActor = await Actor.findOne({ class: 'aiBot' }); // Update to use your actor's class
+
+        // Use OpenAI API to generate a comment based on the post content
+        const response = await openai.createChatCompletion({
+            model: "gpt-4", // Use the appropriate model
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a helpful assistant generating comments for social media posts.",
+                },
+                {
+                    role: "user",
+                    content: `Post content: "${post.body}". Please generate a relevant comment.`,
+                },
+            ],
+        });
+
+        const commentContent = response.data.choices[0].message.content;
+
+        // Add the generated comment to the post
         post.comments.push({
-            actor: lexBotActor._id,
+            actor: aiActor._id,
             body: commentContent,
             new_comment: false,
             absTime: Date.now(),
-            relativeTime: Date.now() - lexBotActor.createdAt
+            relativeTime: Date.now() - aiActor.createdAt,
         });
-        
-        await post.save();
-        console.log('Lex bot comment created');
-    } catch (error) {
-        console.error('Error creating Lex bot comment:', error);
-    }
-};
 
-// Function to like a post as Lex bot
-exports.lexBotLikePost = async (postId) => {
-    try {
-        const post = await Script.findById(postId);
-        const lexBotActor = await Actor.findOne({ class: 'lexBot' });
-        
-        if (!post.likes.includes(lexBotActor._id)) {
-            post.likes.push(lexBotActor._id);
-            await post.save();
-            console.log('Lex bot liked post');
-        }
+        await post.save();
+        console.log('AI-generated comment created');
     } catch (error) {
-        console.error('Error liking post:', error);
+        console.error('Error creating AI-generated comment:', error);
     }
 };
