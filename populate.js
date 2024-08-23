@@ -62,6 +62,13 @@ function getLikes() {
   return Math.floor(Math.random() * 1001); // Random number of likes between 0 and 1000
 }
 
+function timeStringToNum(timeString) {
+    // Example: Convert 'YYYY-MM-DD HH:MM:SS' to a Unix timestamp
+    const date = new Date(timeString);
+    return date.getTime(); // Returns the timestamp in milliseconds
+}
+
+
 async function doPopulate() {
     try {
         // Dropping collections
