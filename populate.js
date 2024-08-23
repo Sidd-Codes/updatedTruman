@@ -150,39 +150,36 @@ async function doPopulate() {
             console.log(color_start, "Starting to populate actors collection...");
             return new Promise((resolve, reject) => {
                 async.each(actors_list, async function(actor_raw, callback) {
-                        const actordetail = {
-                            username: actor_raw.username,
-                            profile: {
-                                name: actor_raw.name,
-                                gender: actor_raw.gender,
-                                age: actor_raw.age,
-                                location: actor_raw.location,
-                                bio: actor_raw.bio,
-                                picture: actor_raw.picture
-                            },
-                            class: actor_raw.class
-                        };
-
-                        const actor = new Actor(actordetail);
-                        try {
-                            await actor.save();
-                            callback();
-                        } catch (err) {
-                            console.log(color_error, "ERROR: Something went wrong with saving actor in database");
-                            callback(err);
-                        }
-                    },
-                    function(err) {
-                        if (err) {
-                            console.log(color_error, "ERROR: Something went wrong with saving actors in database");
-                            return reject(err);
-                        }
-                        // Return response
-                        console.log(color_success, "All actors added to database!");
-                        resolve('Promise is resolved successfully.');
+                    const actordetail = {
+                        username: actor_raw.username,
+                        profile: {
+                            name: actor_raw.name,
+                            gender: actor_raw.gender,
+                            age: actor_raw.age,
+                            location: actor_raw.location,
+                            bio: actor_raw.bio,
+                            picture: actor_raw.picture
+                        },
+                        class: actor_raw.class
+                    };
+                
+                    const actor = new Actor(actordetail);
+                    try {
+                        await actor.save();
+                        callback(null); // Pass `null` to indicate success
+                    } catch (err) {
+                        console.log(color_error, "ERROR: Something went wrong with saving actor in database");
+                        callback(err); // Pass the error to the callback
                     }
-                );
-            });
+                }, function(err) {
+                    if (err) {
+                        console.log(color_error, "ERROR: Something went wrong with saving actors in database");
+                        return reject(err);
+                    }
+                    console.log(color_success, "All actors added to database!");
+                    resolve('Promise is resolved successfully.');
+                });
+
             /*************************
             Create each post and upload it to the DB
             Actors must be in DB first to add them correctly to the post
