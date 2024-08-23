@@ -138,41 +138,41 @@ async function doPopulate() {
                 resolve("done");
             }).catch(reject);
         });
-    }).then(function(result) {
-        console.log(color_start, "Starting to populate actors collection...");
-        return new Promise((resolve, reject) => {
-            async.each(actors_list, async function(actor_raw, callback) {
-                const actordetail = {
-                    username: actor_raw.username,
-                    profile: {
-                        name: actor_raw.name,
-                        gender: actor_raw.gender,
-                        age: actor_raw.age,
-                        location: actor_raw.location,
-                        bio: actor_raw.bio,
-                        picture: actor_raw.picture
-                    },
-                    class: actor_raw.class
-                };
+      .then(function(result) {
+    console.log(color_start, "Starting to populate actors collection...");
+    return new Promise((resolve, reject) => {
+        async.eachSeries(actors_list, async function(actor_raw, callback) {
+            const actordetail = {
+                username: actor_raw.username,
+                profile: {
+                    name: actor_raw.name,
+                    gender: actor_raw.gender,
+                    age: actor_raw.age,
+                    location: actor_raw.location,
+                    bio: actor_raw.bio,
+                    picture: actor_raw.picture
+                },
+                class: actor_raw.class
+            };
 
-                const actor = new Actor(actordetail);
-                try {
-                    await actor.save();
-                    callback(null); // Pass `null` to indicate success
-                } catch (err) {
-                    console.log(color_error, "ERROR: Something went wrong with saving actor in database");
-                    callback(err); // Pass the error to the callback
-                }
-            }, function(err) {
-                if (err) {
-                    console.log(color_error, "ERROR: Something went wrong with saving actors in database");
-                    return reject(err);
-                }
-                console.log(color_success, "All actors added to database!");
-                resolve('Promise is resolved successfully.');
-            });
+            const actor = new Actor(actordetail);
+            try {
+                await actor.save();
+                callback(); // Call callback to signal success
+            } catch (err) {
+                console.log(color_error, "ERROR: Something went wrong with saving actor in database");
+                callback(err); // Pass the error to callback
+            }
+        }, function(err) {
+            if (err) {
+                console.log(color_error, "ERROR: Something went wrong with saving actors in database");
+                return reject(err); // Reject promise with the error
+            }
+            console.log(color_success, "All actors added to database!");
+            resolve('Promise is resolved successfully.'); // Resolve promise after completion
         });
-    }).then(function(result) {
+    });
+}).then(function(result) {
         console.log(color_start, "Starting to populate posts collection...");
         return new Promise((resolve, reject) => {
             async.each(posts_list, async function(new_post, callback) {
