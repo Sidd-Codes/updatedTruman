@@ -12,8 +12,6 @@ const _ = require('lodash');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const CSVToJSON = require("csvtojson");
-
-// Import necessary classes from the OpenAI library
 const { Configuration, OpenAIApi } = require('openai');
 
 // Input Files
@@ -33,12 +31,12 @@ var notification_reply_list;
 dotenv.config({ path: '.env' });
 
 // Initialize OpenAI API
-import OpenAI from 'openai';
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, { useNewUrlParser: true });
+mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 var db = mongoose.connection;
 mongoose.connection.on('error', (err) => {
     console.error(err);
@@ -243,36 +241,24 @@ async function doPopulate() {
                 if (act) {
                   // Generate a comment using GPT
                   const generatedComment = await generateComment(post.body);
-                  console.log('Generated Comment:', generatedComment);
-                  const comment_detail = {
-                    commentID: generateUniqueId(), // Implement or adjust function to generate unique IDs
+                  const postdetail = {
+                    postID: post.id,
                     body: generatedComment,
-                    likes: getLikesComment(),
                     actor: act,
-                    time: timeStringToNum(post.time),
+                    time: timeStringToNum(post.time) || null,
                     class: post.class
                   };
-        
-                  // Save the comment to the post
-                  const pr = await Script.findOne({ postID: post.id }).exec();
-                  if (pr) {
-                    pr.comments.push(comment_detail);
-                    pr.comments.sort(function(a, b) { return a.time - b.time; });
-        
-                    try {
-                      await pr.save();
-                      console.log(color_success, "Comment saved successfully!"); // <-- Insert this line
+                  const script = new Script(postdetail);
+                  try {
+                    await script.save();
+                    callback();
                   } catch (err) {
-                      console.log(color_error, "ERROR: Something went wrong with saving reply in database");
-                      return callback(err);
+                    console.log(color_error, "ERROR: Something went wrong with saving reply in database");
+                    callback(err);
                   }
-                  } else { // No post found
-                    console.log(color_error, "ERROR: Post not found in database");
-                    return callback();
-                  }
-                } else { // No actor found
+                } else {
                   console.log(color_error, "ERROR: Actor not found in database");
-                  return callback();
+                  callback();
                 }
               },
               function(err) {
@@ -280,149 +266,60 @@ async function doPopulate() {
                   console.log(color_error, "ERROR: Something went wrong with saving replies in database");
                   return reject(err);
                 }
-                // Return response
                 console.log(color_success, "All replies added to database!");
                 resolve('Promise is resolved successfully.');
               });
             });
-
-            /*************************
-            Creates each notification(replies) and uploads it to the DB
-            Actors must be in DB first to add them correctly to the post
-            *************************/
-        })
+          })
+        /***********
+            Create each notification and add to the database.
+            **********/
         .then(function(result) {
-            console.log(color_start, "Starting to populate notifications (replies) collection...");
+            console.log(color_start, "Starting to populate notifications collection...");
             return new Promise((resolve, reject) => {
-                async.each(notification_reply_list, async function(new_notify, callback) {
-                        const act = await Actor.findOne({ username: new_notify.actor }).exec();
-                        if (act) {
-                            const notifydetail = {
+                async.each(notification_list, async function(new_notification, callback) {
+                        const act = await Actor.findOne({ username: new_notification.actor }).exec();
+                        const post = await Script.findOne({ postID: new_notification.postID }).exec();
+                        if (act && post) {
+                            const notification = new Notification({
+                                notificationType: new_notification.type,
+                                post: post,
                                 actor: act,
-                                notificationType: 'reply',
-                                time: timeStringToNum(new_notify.time),
-                                userPostID: new_notify.userPostID,
-                                replyBody: new_notify.body,
-                                class: new_notify.class
-                            };
+                                timestamp: timeStringToNum(new_notification.time)
+                            });
 
-                            const notify = new Notification(notifydetail);
                             try {
-                                await notify.save();
+                                await notification.save();
+                                callback();
                             } catch (err) {
-                                console.log(color_error, "ERROR: Something went wrong with saving notification(reply) in database");
-                                console.log(err);
-                                next(err);
+                                console.log(color_error, "ERROR: Something went wrong with saving notification in database");
+                                callback(err);
                             }
-                        } else { //Else no actor found
-                            console.log(color_error, "ERROR: Actor not found in database");
-                            callback();
-                        }
-                    },
-                    function(err) {
-                        if (err) {
-                            console.log(color_error, "ERROR: Something went wrong with saving notifications(replies) in database");
-                        }
-                        // Return response
-                        console.log(color_success, "All notifications(replies) added to database!");
-                        resolve('Promise is resolved successfully.');
-                        return 'Loaded Notifications';
-                    }
-                );
-            });
-            /*************************
-            Creates each notification(likes, reads) and uploads it to the DB
-            Actors must be in DB first to add them correctly to the post
-            *************************/
-        }).then(function(result) {
-            console.log(color_start, "Starting to populate notifications (likes, reads) collection...");
-            return new Promise((resolve, reject) => {
-                async.each(notification_list, async function(new_notify, callback) {
-                        const act = await Actor.findOne({ username: new_notify.actor }).exec();
-                        if (act) {
-                            const notifydetail = {
-                                actor: act,
-                                notificationType: new_notify.type,
-                                time: timeStringToNum(new_notify.time),
-                                class: new_notify.class
-                            };
-
-                            if (new_notify.userPostID >= 0 && new_notify.userPostID) {
-                                notifydetail.userPostID = new_notify.userPostID;
-                            } else if (new_notify.userReplyID >= 0 && new_notify.userReplyID) {
-                                notifydetail.userReplyID = new_notify.userReplyID;
-                            } else if (new_notify.actorReply >= 0 && new_notify.actorReply) {
-                                notifydetail.actorReply = new_notify.actorReply;
-                            }
-
-                            const notify = new Notification(notifydetail);
-                            try {
-                                await notify.save();
-                            } catch (err) {
-                                console.log(color_error, "ERROR: Something went wrong with saving notification(like, read) in database");
-                                next(err);
-                            }
-                        } else { //Else no actor found
-                            console.log(color_error, "ERROR: Actor not found in database");
+                        } else { // Else no actor found
+                            console.log(color_error, "ERROR: Actor or post not found in database");
                             callback();
                         }
                     },
                     function(err) {
                         if (err) {
                             console.log(color_error, "ERROR: Something went wrong with saving notifications in database");
-                            callback(err);
+                            return reject(err);
                         }
                         // Return response
                         console.log(color_success, "All notifications added to database!");
-                        mongoose.connection.close();
                         resolve('Promise is resolved successfully.');
-                        return 'Loaded Notifications';
                     }
                 );
             });
-        })
+        }).then(function(result) {
+            console.log(color_success, "Successfully populated database.");
+            process.exit(0);
+        }).catch(function(err) {
+            console.error(color_error, "An error occurred:", err);
+            process.exit(1);
+        });
 }
 
-//capitalize a string
-String.prototype.capitalize = function() {
-    return this.charAt(0).toUpperCase() + this.slice(1);
-}
-
-//Transforms a time like -12:32 (minus 12 hours and 32 minutes) into a time in milliseconds
-//Positive numbers indicate future posts (after they joined), Negative numbers indicate past posts (before they joined)
-//Format: (+/-)HH:MM
-function timeStringToNum(v) {
-    var timeParts = v.split(":");
-    if (timeParts[0] == "-0")
-    // -0:XX
-        return -1 * parseInt(((timeParts[0] * (60000 * 60)) + (timeParts[1] * 60000)), 10);
-    else if (timeParts[0].startsWith('-'))
-    //-X:XX
-        return parseInt(((timeParts[0] * (60000 * 60)) + (-1 * (timeParts[1] * 60000))), 10);
-    else
-        return parseInt(((timeParts[0] * (60000 * 60)) + (timeParts[1] * 60000)), 10);
-};
-
-//Create a random number (for the number of likes) with a weighted distrubution
-//This is for posts
-function getLikes() {
-    var notRandomNumbers = [1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6];
-    var idx = Math.floor(Math.random() * notRandomNumbers.length);
-    return notRandomNumbers[idx];
-}
-
-//Create a radom number (for likes) with a weighted distrubution
-//This is for comments
-function getLikesComment() {
-    var notRandomNumbers = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4];
-    var idx = Math.floor(Math.random() * notRandomNumbers.length);
-    return notRandomNumbers[idx];
-}
-
-function generateUniqueId() {
-  return 'comment-' + Date.now(); // Simple unique ID generator; adjust as needed
-}
-
-//Call the function with the long chain of promises
 doPopulate();
-            
+
+console.log(color_start, 'Finished populate.js script...');
