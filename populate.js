@@ -33,17 +33,17 @@ const openai = require('openai');
 openai.apiKey = process.env.OPENAI_API_KEY;
 
 async function generateComment(postContent) {
-  try {
-    const response = await openai.Completion.create({
-      engine: "davinci",
-      prompt: `Generate a natural-sounding comment for the following post: ${postContent}`,
-      max_tokens: 60,
-    });
-    return response.choices[0].text.trim();
-  } catch (error) {
-    console.error('Error generating comment:', error);
-  }
+    try {
+        const completion = await openai.chat.completions.create({
+            messages: [{ role: 'user', content: postContent }],
+            model: 'gpt-3.5-turbo',
+        });
+        return completion.choices[0].message.content;
+    } catch (error) {
+        console.error('Error generating comment:', error);
+    }
 }
+
 
 generateComment("This is a sample post content.")
   .then(comment => console.log("Generated comment:", comment));
