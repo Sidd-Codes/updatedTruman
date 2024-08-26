@@ -56,22 +56,6 @@ mongoose.connection.on('error', (err) => {
     process.exit(1);
 });
 
-// Function to generate a comment using GPT
-async function generateComment(postBody) {
-  try {
-    const response = await openai.createCompletion({
-      model: "text-davinci-003", // or any other GPT-3/4 model you are using
-      prompt: `Generate a comment for the following post: ${postBody}`,
-      max_tokens: 50, // Adjust the token count as needed
-      temperature: 0.7, // Controls the creativity of the response
-    });
-    return response.data.choices[0].text.trim();
-  } catch (error) {
-    console.error('Error generating comment:', error);
-    return 'Sorry, I couldn\'t generate a comment.';
-  }
-}
-
 // Function to generate random likes
 function getLikes() {
   return Math.floor(Math.random() * 1001); // Random number of likes between 0 and 1000
