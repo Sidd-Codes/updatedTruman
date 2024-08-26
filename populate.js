@@ -29,12 +29,23 @@ var notification_reply_list;
 
 dotenv.config({ path: '.env' });
 
-const { Configuration, OpenAIApi } = require("openai");
+const openai = require('openai');
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
+openai.apiKey = process.env.OPENAI_API_KEY;
+
+async function generateComment(postContent) {
+  try {
+    const response = await openai.Completion.create({
+      engine: "davinci",
+      prompt: `Generate a natural-sounding comment for the following post: ${postContent}`,
+      max_tokens: 60,
+    });
+    return response.choices[0].text.trim();
+  } catch (error) {
+    console.error('Error generating comment:', error);
+  }
+}
+
 
 
 mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
