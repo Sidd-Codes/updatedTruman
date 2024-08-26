@@ -29,9 +29,13 @@ var notification_reply_list;
 
 dotenv.config({ path: '.env' });
 
-const openai = new OpenAI({
+const { Configuration, OpenAIApi } = require("openai");
+
+const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
+const openai = new OpenAIApi(configuration);
+
 
 mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 var db = mongoose.connection;
