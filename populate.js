@@ -30,7 +30,6 @@ var notification_reply_list;
 dotenv.config({ path: '.env' });
 
 const openai = require('openai');
-
 openai.apiKey = process.env.OPENAI_API_KEY;
 
 async function generateComment(postContent) {
@@ -45,6 +44,10 @@ async function generateComment(postContent) {
     console.error('Error generating comment:', error);
   }
 }
+
+generateComment("This is a sample post content.")
+  .then(comment => console.log("Generated comment:", comment));
+
 
 
 
