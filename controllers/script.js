@@ -301,48 +301,4 @@ exports.postUpdateUserPostFeedAction = async(req, res, next) => {
     }
 }
 
-const { Configuration, OpenAIApi } = require("openai");
 
-const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY, // Ensure your API key is stored in your .env file
-});
-
-const openai = new OpenAIApi(configuration);
-
-exports.createAiGeneratedComment = async (postId) => {
-    try {
-        const post = await Script.findById(postId);
-        const aiActor = await Actor.findOne({ class: 'aiBot' }); // Update to use your actor's class
-
-        // Use OpenAI API to generate a comment based on the post content
-        const response = await openai.createChatCompletion({
-            model: "gpt-4", // Use the appropriate model
-            messages: [
-                {
-                    role: "system",
-                    content: "You are a helpful assistant generating comments for social media posts.",
-                },
-                {
-                    role: "user",
-                    content: `Post content: "${post.body}". Please generate a relevant comment.`,
-                },
-            ],
-        });
-
-        const commentContent = response.data.choices[0].message.content;
-
-        // Add the generated comment to the post
-        post.comments.push({
-            actor: aiActor._id,
-            body: commentContent,
-            new_comment: false,
-            absTime: Date.now(),
-            relativeTime: Date.now() - aiActor.createdAt,
-        });
-
-        await post.save();
-        console.log('AI-generated comment created');
-    } catch (error) {
-        console.error('Error creating AI-generated comment:', error);
-    }
-};
