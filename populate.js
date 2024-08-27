@@ -29,8 +29,10 @@ var notification_reply_list;
 
 dotenv.config({ path: '.env' });
 
-const openai = require('openai');
-openai.apiKey = process.env.OPENAI_API_KEY;
+const { OpenAI } = require('openai');
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
 
 async function generateComment(postContent) {
     try {
@@ -41,12 +43,9 @@ async function generateComment(postContent) {
         return completion.choices[0].message.content;
     } catch (error) {
         console.error('Error generating comment:', error);
+        throw error; // Re-throw the error to be caught in the calling function
     }
 }
-
-
-generateComment("This is a sample post content.")
-  .then(comment => console.log("Generated comment:", comment));
 
 
 
