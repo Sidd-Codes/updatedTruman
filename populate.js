@@ -8,10 +8,12 @@ const async = require('async');
 const Actor = require('./models/Actor.js');
 const Script = require('./models/Script.js');
 const Notification = require('./models/Notification.js');
+const Reply = require('./models/Reply.js');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const CSVToJSON = require("csvtojson");
 const OpenAI = require('openai');
+
 
 // Input Files
 const actor_inputFile = './input/actors.csv';
