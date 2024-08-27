@@ -31,11 +31,13 @@ var notification_reply_list;
 
 dotenv.config({ path: '.env' });
 
-const OpenAI = require('openai');
+const OpenAIApi = require('openai');
 
-const openai = new OpenAI({
+// Initialize the OpenAI client with a different name
+const openaiClient = new OpenAIApi({
     apiKey: process.env.OPENAI_API_KEY
 });
+
 
 async function generateComment(postContent) {
     try {
