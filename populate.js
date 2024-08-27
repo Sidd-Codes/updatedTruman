@@ -41,7 +41,7 @@ const openaiClient = new OpenAIApi({
 
 async function generateComment(postContent) {
     try {
-        const completion = await openai.chat.completions.create({
+        const completion = await openaiClient.chat.completions.create({
             messages: [{ role: 'user', content: postContent }],
             model: 'gpt-3.5-turbo',
         });
