@@ -157,7 +157,7 @@ async function doPopulate() {
                     time: timeStringToNum(new_post.time) || null,
                     class: new_post.class
                 };
-
+        
                 const script = new Script(postdetail);
                 await script.save();
             } else {
@@ -165,15 +165,15 @@ async function doPopulate() {
             }
         }
         console.log(color_success, "All posts added to database!");
-
-        // Populate post replies
+        
+        // Populate post replies (assuming you have a Reply model)
         console.log(color_start, "Starting to populate post replies...");
         for (const post of posts_list) {
             const act = await Actor.findOne({ username: post.actor }).exec();
             if (act) {
                 // Generate a comment using GPT
                 const generatedComment = await generateComment(post.body);
-                const postdetail = {
+                const replyDetail = {
                     postID: post.id,
                     body: generatedComment,
                     likes: getLikesComment(),
@@ -181,8 +181,8 @@ async function doPopulate() {
                     time: timeStringToNum(post.time) || null,
                     class: post.class
                 };
-                const script = new Script(postdetail);
-                await script.save();
+                const reply = new Reply(replyDetail);  // Use a Reply model instead of Script
+                await reply.save();
             } else {
                 console.log(color_error, "ERROR: Actor not found in database");
             }
