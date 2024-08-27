@@ -61,7 +61,17 @@ mongoose.connection.on('error', (err) => {
 
 // Function to generate random likes
 function getLikes() {
-  return Math.floor(Math.random() * 1001); // Random number of likes between 0 and 1000
+    var notRandomNumbers = [1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6];
+    var idx = Math.floor(Math.random() * notRandomNumbers.length);
+    return notRandomNumbers[idx];
+}
+
+//Create a radom number (for likes) with a weighted distrubution
+//This is for comments
+function getLikesComment() {
+    var notRandomNumbers = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4];
+    var idx = Math.floor(Math.random() * notRandomNumbers.length);
+    return notRandomNumbers[idx];
 }
 
 function timeStringToNum(v) {
@@ -166,6 +176,7 @@ async function doPopulate() {
                 const postdetail = {
                     postID: post.id,
                     body: generatedComment,
+                    likes: getLikesComment(),
                     actor: act,
                     time: timeStringToNum(post.time) || null,
                     class: post.class
